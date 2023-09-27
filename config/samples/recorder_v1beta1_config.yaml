@@ -1,0 +1,12 @@
+apiVersion: recorder.blahonga.me/v1beta1
+kind: Config
+metadata:
+  labels:
+    app.kubernetes.io/name: config
+    app.kubernetes.io/instance: config-sample
+    app.kubernetes.io/part-of: krcrdr
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: krcrdr
+  name: config-sample
+spec:
+  # TODO(user): Add fields here

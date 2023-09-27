@@ -1,0 +1,78 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: krcrdr
+  description: API for recording stuff
+paths:
+  /record:
+    get:
+      operationId: listRecords
+      description: List all Records
+      responses:
+        200:
+          description: the list of Records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/recordWithID'
+                maxItems: 100
+    post:
+      operationId: addRecord
+      description: Add record
+      security:
+        - BearerAuth:
+          - "records:w"
+      requestBody:
+        description: The record to insert. Returns the recordID
+        required: true
+        content:
+          application/json:
+            schema:
+             $ref: '#/components/schemas/record'
+      responses:
+        201:
+          description: The inserted record with the recordID
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/recordWithID'
+components:
+  schemas:
+    record:
+      properties: 
+        name: 
+          type: string
+      required:
+        - name
+    recordWithID:
+      allOf:
+        - $ref: '#/components/schemas/record'
+        - properties:
+            id:
+              type: string
+          required:
+            - id
+    error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error message
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - BearerAuth: [ ]
+

@@ -1,0 +1,32 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - recorder.blahonga.me
+  resources:
+  - configs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - recorder.blahonga.me
+  resources:
+  - configs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - recorder.blahonga.me
+  resources:
+  - configs/status
+  verbs:
+  - get
+  - patch
+  - update
