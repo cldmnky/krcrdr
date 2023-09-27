@@ -1,0 +1,16 @@
+[allowlist]
+  description = "Global Allowlist"
+
+  # Ignore based on any subset of the file path
+  paths = [
+
+    # Ignore anything with the word funkymonkey anywhere in the path
+    '''fake_''',
+    '''_test.go''',
+  ]
+        
+  # Ignore based on any subset of the line
+  regexes = [
+    # Ignore lines containing pickles
+    '''fake''',
+  ]
