@@ -8,6 +8,9 @@ paths:
     get:
       operationId: listRecords
       description: List all Records
+      security:
+        - BearerAuth:
+          - "records:r"
       responses:
         200:
           description: the list of Records
