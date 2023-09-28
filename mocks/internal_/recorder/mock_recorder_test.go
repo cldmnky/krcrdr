@@ -65,43 +65,135 @@ func (_c *Recorder_FromAdmissionRequest_Call) RunAndReturn(run func(*unstructure
 	return _c
 }
 
-// String provides a mock function with given fields:
-func (_m *Recorder) String() string {
+// OperationType provides a mock function with given fields:
+func (_m *Recorder) OperationType() v1.Operation {
 	ret := _m.Called()
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
+	var r0 v1.Operation
+	if rf, ok := ret.Get(0).(func() v1.Operation); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Get(0).(v1.Operation)
 	}
 
 	return r0
 }
 
-// Recorder_String_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'String'
-type Recorder_String_Call struct {
+// Recorder_OperationType_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OperationType'
+type Recorder_OperationType_Call struct {
 	*mock.Call
 }
 
-// String is a helper method to define mock.On call
-func (_e *Recorder_Expecter) String() *Recorder_String_Call {
-	return &Recorder_String_Call{Call: _e.mock.On("String")}
+// OperationType is a helper method to define mock.On call
+func (_e *Recorder_Expecter) OperationType() *Recorder_OperationType_Call {
+	return &Recorder_OperationType_Call{Call: _e.mock.On("OperationType")}
 }
 
-func (_c *Recorder_String_Call) Run(run func()) *Recorder_String_Call {
+func (_c *Recorder_OperationType_Call) Run(run func()) *Recorder_OperationType_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Recorder_String_Call) Return(_a0 string) *Recorder_String_Call {
+func (_c *Recorder_OperationType_Call) Return(_a0 v1.Operation) *Recorder_OperationType_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Recorder_String_Call) RunAndReturn(run func() string) *Recorder_String_Call {
+func (_c *Recorder_OperationType_Call) RunAndReturn(run func() v1.Operation) *Recorder_OperationType_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SendToApiServer provides a mock function with given fields:
+func (_m *Recorder) SendToApiServer() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Recorder_SendToApiServer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendToApiServer'
+type Recorder_SendToApiServer_Call struct {
+	*mock.Call
+}
+
+// SendToApiServer is a helper method to define mock.On call
+func (_e *Recorder_Expecter) SendToApiServer() *Recorder_SendToApiServer_Call {
+	return &Recorder_SendToApiServer_Call{Call: _e.mock.On("SendToApiServer")}
+}
+
+func (_c *Recorder_SendToApiServer_Call) Run(run func()) *Recorder_SendToApiServer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Recorder_SendToApiServer_Call) Return(_a0 error) *Recorder_SendToApiServer_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Recorder_SendToApiServer_Call) RunAndReturn(run func() error) *Recorder_SendToApiServer_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ToYaml provides a mock function with given fields:
+func (_m *Recorder) ToYaml() (string, error) {
+	ret := _m.Called()
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (string, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Recorder_ToYaml_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ToYaml'
+type Recorder_ToYaml_Call struct {
+	*mock.Call
+}
+
+// ToYaml is a helper method to define mock.On call
+func (_e *Recorder_Expecter) ToYaml() *Recorder_ToYaml_Call {
+	return &Recorder_ToYaml_Call{Call: _e.mock.On("ToYaml")}
+}
+
+func (_c *Recorder_ToYaml_Call) Run(run func()) *Recorder_ToYaml_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Recorder_ToYaml_Call) Return(_a0 string, _a1 error) *Recorder_ToYaml_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Recorder_ToYaml_Call) RunAndReturn(run func() (string, error)) *Recorder_ToYaml_Call {
 	_c.Call.Return(run)
 	return _c
 }

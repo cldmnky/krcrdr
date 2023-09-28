@@ -20,6 +20,12 @@ func Mount(r *gin.Engine, v JWSValidator) error {
 type RecordImpl struct{}
 
 func (r RecordImpl) AddRecord(c *gin.Context) {
+	// get the post body
+	var record api.Record
+	if err := c.ShouldBindJSON(&record); err != nil {
+		c.IndentedJSON(400, err)
+		return
+	}
 	c.IndentedJSON(200, "AddRecord")
 }
 

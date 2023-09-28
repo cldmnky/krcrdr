@@ -1,0 +1,60 @@
+changeTimestamp: "2023-09-28T19:45:28.315972+02:00"
+cluster: local
+diffstring: '<del style="background:#ffe6e6;">apiVersion: apps/v1&para;<br>kind: Deployment&para;<br>metadata:&para;<br>  creationTimestamp:
+  &#34;2023-09-28T17:45:28Z&#34;&para;<br>  generation: 2&para;<br>  labels:&para;<br>    addedLabel:
+  test&para;<br>    app: test&para;<br>    changed: &#34;yes&#34;&para;<br>  managedFields:&para;<br>  -
+  apiVersion: apps/v1&para;<br>    fieldsType: FieldsV1&para;<br>    fieldsV1:&para;<br>      f:metadata:&para;<br>        f:labels:&para;<br>          .:
+  {}&para;<br>          f:addedLabel: {}&para;<br>          f:app: {}&para;<br>          f:changed:
+  {}&para;<br>      f:spec:&para;<br>        f:paused: {}&para;<br>        f:progressDeadlineSeconds:
+  {}&para;<br>        f:replicas: {}&para;<br>        f:revisionHistoryLimit: {}&para;<br>        f:selector:
+  {}&para;<br>        f:strategy:&para;<br>          f:rollingUpdate:&para;<br>            .:
+  {}&para;<br>            f:maxSurge: {}&para;<br>            f:maxUnavailable: {}&para;<br>          f:type:
+  {}&para;<br>        f:template:&para;<br>          f:metadata:&para;<br>            f:labels:&para;<br>              .:
+  {}&para;<br>              f:app: {}&para;<br>          f:spec:&para;<br>            f:containers:&para;<br>              k:{&#34;name&#34;:&#34;test&#34;}:&para;<br>                .:
+  {}&para;<br>                f:image: {}&para;<br>                f:imagePullPolicy:
+  {}&para;<br>                f:name: {}&para;<br>                f:resources: {}&para;<br>                f:terminationMessagePath:
+  {}&para;<br>                f:terminationMessagePolicy: {}&para;<br>            f:dnsPolicy:
+  {}&para;<br>            f:restartPolicy: {}&para;<br>            f:schedulerName:
+  {}&para;<br>            f:securityContext: {}&para;<br>            f:terminationGracePeriodSeconds:
+  {}&para;<br>    manager: webhook.test&para;<br>    operation: Update&para;<br>    time:
+  &#34;2023-09-28T17:45:28Z&#34;&para;<br>  name: deployment&para;<br>  namespace:
+  default&para;<br>  resourceVersion: &#34;199&#34;&para;<br>  uid: ed43c560-fa9e-40e4-9174-ed30a5f7385e&para;<br>spec:&para;<br>  paused:
+  true&para;<br>  progressDeadlineSeconds: 600&para;<br>  replicas: 3&para;<br>  revisionHistoryLimit:
+  10&para;<br>  selector:&para;<br>    matchLabels:&para;<br>      app: test&para;<br>  strategy:&para;<br>    rollingUpdate:&para;<br>      maxSurge:
+  25%&para;<br>      maxUnavailable: 25%&para;<br>    type: RollingUpdate&para;<br>  template:&para;<br>    metadata:&para;<br>      creationTimestamp:
+  </del><span>null&para;<br></span><del style="background:#ffe6e6;">      labels:&para;<br>        app:
+  test&para;<br>    spec:&para;<br>      containers:&para;<br>      - image: updated:1234&para;<br>        imagePullPolicy:
+  IfNotPresent&para;<br>        name: test&para;<br>        resources: {}&para;<br>        terminationMessagePath:
+  /dev/termination-log&para;<br>        terminationMessagePolicy: File&para;<br>      dnsPolicy:
+  ClusterFirst&para;<br>      restartPolicy: Always&para;<br>      schedulerName:
+  default-scheduler&para;<br>      securityContext: {}&para;<br>      terminationGracePeriodSeconds:
+  30&para;<br>status: {}&para;<br></del>'
+generation: 2
+jsonPatch: '{"apiVersion":null,"kind":null,"metadata":null,"spec":null,"status":null}'
+jsonPatch6902: |
+  {"op":"replace","path":"","value":null}
+kind:
+  group: apps
+  kind: Deployment
+  version: v1
+name: deployment
+namespace: default
+objectMeta:
+  creationTimestamp: "2023-09-28T17:45:28Z"
+  labels:
+    addedLabel: test
+    app: test
+    changed: "yes"
+  name: deployment
+  namespace: default
+operation: DELETE
+resource:
+  group: apps
+  resource: deployments
+  version: v1
+uid: ed43c560-fa9e-40e4-9174-ed30a5f7385e
+userInfo:
+  groups:
+  - system:masters
+  - system:authenticated
+  username: admin

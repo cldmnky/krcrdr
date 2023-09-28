@@ -6,11 +6,16 @@ package api
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
@@ -20,19 +25,497 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// Defines values for RecordOperation.
+const (
+	RecordOperationCREATE RecordOperation = "CREATE"
+	RecordOperationDELETE RecordOperation = "DELETE"
+	RecordOperationUPDATE RecordOperation = "UPDATE"
+)
+
+// Defines values for RecordWithIDOperation.
+const (
+	RecordWithIDOperationCREATE RecordWithIDOperation = "CREATE"
+	RecordWithIDOperationDELETE RecordWithIDOperation = "DELETE"
+	RecordWithIDOperationUPDATE RecordWithIDOperation = "UPDATE"
+)
+
+// IoK8sApimachineryPkgApisMetaV1FieldsV1 defines model for io.k8s.apimachinery.pkg.apis.meta.v1.FieldsV1.
+type IoK8sApimachineryPkgApisMetaV1FieldsV1 = map[string]interface{}
+
+// IoK8sApimachineryPkgApisMetaV1ManagedFieldsEntry defines model for io.k8s.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry.
+type IoK8sApimachineryPkgApisMetaV1ManagedFieldsEntry struct {
+	ApiVersion  *string                                 `json:"apiVersion,omitempty"`
+	FieldsType  *string                                 `json:"fieldsType,omitempty"`
+	FieldsV1    *IoK8sApimachineryPkgApisMetaV1FieldsV1 `json:"fieldsV1,omitempty"`
+	Manager     *string                                 `json:"manager,omitempty"`
+	Operation   *string                                 `json:"operation,omitempty"`
+	Subresource *string                                 `json:"subresource,omitempty"`
+	Time        *IoK8sApimachineryPkgApisMetaV1Time     `json:"time,omitempty"`
+}
+
+// IoK8sApimachineryPkgApisMetaV1ObjectMeta defines model for io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta.
+type IoK8sApimachineryPkgApisMetaV1ObjectMeta struct {
+	Annotations                *map[string]string                                  `json:"annotations,omitempty"`
+	CreationTimestamp          *IoK8sApimachineryPkgApisMetaV1Time                 `json:"creationTimestamp,omitempty"`
+	DeletionGracePeriodSeconds *int64                                              `json:"deletionGracePeriodSeconds,omitempty"`
+	DeletionTimestamp          *IoK8sApimachineryPkgApisMetaV1Time                 `json:"deletionTimestamp,omitempty"`
+	Finalizers                 *[]string                                           `json:"finalizers,omitempty"`
+	GenerateName               *string                                             `json:"generateName,omitempty"`
+	Generation                 *int64                                              `json:"generation,omitempty"`
+	Labels                     *map[string]string                                  `json:"labels,omitempty"`
+	ManagedFields              *[]IoK8sApimachineryPkgApisMetaV1ManagedFieldsEntry `json:"managedFields,omitempty"`
+	Name                       *string                                             `json:"name,omitempty"`
+	Namespace                  *string                                             `json:"namespace,omitempty"`
+	OwnerReferences            *[]IoK8sApimachineryPkgApisMetaV1OwnerReference     `json:"ownerReferences,omitempty"`
+	ResourceVersion            *string                                             `json:"resourceVersion,omitempty"`
+	SelfLink                   *string                                             `json:"selfLink,omitempty"`
+	Uid                        *string                                             `json:"uid,omitempty"`
+}
+
+// IoK8sApimachineryPkgApisMetaV1OwnerReference defines model for io.k8s.apimachinery.pkg.apis.meta.v1.OwnerReference.
+type IoK8sApimachineryPkgApisMetaV1OwnerReference struct {
+	// ApiVersion API version of the referent.
+	ApiVersion         string `json:"apiVersion"`
+	BlockOwnerDeletion *bool  `json:"blockOwnerDeletion,omitempty"`
+	Controller         *bool  `json:"controller,omitempty"`
+	Kind               string `json:"kind"`
+	Name               string `json:"name"`
+	Uid                string `json:"uid"`
+}
+
+// IoK8sApimachineryPkgApisMetaV1Time defines model for io.k8s.apimachinery.pkg.apis.meta.v1.Time.
+type IoK8sApimachineryPkgApisMetaV1Time = time.Time
+
 // Record defines model for record.
 type Record struct {
-	Name string `json:"name"`
+	ChangeTimestamp *time.Time `json:"changeTimestamp,omitempty"`
+	Cluster         *string    `json:"cluster,omitempty"`
+	DiffString      *string    `json:"diffString,omitempty"`
+	Generation      *int       `json:"generation,omitempty"`
+	JsonPatch       *string    `json:"jsonPatch,omitempty"`
+	JsonPatch6902   *string    `json:"jsonPatch6902,omitempty"`
+	Kind            *struct {
+		Group   *string `json:"group,omitempty"`
+		Kind    *string `json:"kind,omitempty"`
+		Version *string `json:"version,omitempty"`
+	} `json:"kind,omitempty"`
+	Name       string                                    `json:"name"`
+	Namespace  *string                                   `json:"namespace,omitempty"`
+	ObjectMeta *IoK8sApimachineryPkgApisMetaV1ObjectMeta `json:"objectMeta,omitempty"`
+	Operation  *RecordOperation                          `json:"operation,omitempty"`
+	Resource   *struct {
+		Group    *string `json:"group,omitempty"`
+		Resource *string `json:"resource,omitempty"`
+		Version  *string `json:"version,omitempty"`
+	} `json:"resource,omitempty"`
+	Uid      *string `json:"uid,omitempty"`
+	UserInfo *struct {
+		Extra    *map[string]interface{} `json:"extra,omitempty"`
+		Groups   *[]string               `json:"groups,omitempty"`
+		Uid      *string                 `json:"uid,omitempty"`
+		Username *string                 `json:"username,omitempty"`
+	} `json:"userInfo,omitempty"`
 }
+
+// RecordOperation defines model for Record.Operation.
+type RecordOperation string
 
 // RecordWithID defines model for recordWithID.
 type RecordWithID struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	ChangeTimestamp *time.Time `json:"changeTimestamp,omitempty"`
+	Cluster         *string    `json:"cluster,omitempty"`
+	DiffString      *string    `json:"diffString,omitempty"`
+	Generation      *int       `json:"generation,omitempty"`
+	Id              string     `json:"id"`
+	JsonPatch       *string    `json:"jsonPatch,omitempty"`
+	JsonPatch6902   *string    `json:"jsonPatch6902,omitempty"`
+	Kind            *struct {
+		Group   *string `json:"group,omitempty"`
+		Kind    *string `json:"kind,omitempty"`
+		Version *string `json:"version,omitempty"`
+	} `json:"kind,omitempty"`
+	Name       string                                    `json:"name"`
+	Namespace  *string                                   `json:"namespace,omitempty"`
+	ObjectMeta *IoK8sApimachineryPkgApisMetaV1ObjectMeta `json:"objectMeta,omitempty"`
+	Operation  *RecordWithIDOperation                    `json:"operation,omitempty"`
+	Resource   *struct {
+		Group    *string `json:"group,omitempty"`
+		Resource *string `json:"resource,omitempty"`
+		Version  *string `json:"version,omitempty"`
+	} `json:"resource,omitempty"`
+	Uid      *string `json:"uid,omitempty"`
+	UserInfo *struct {
+		Extra    *map[string]interface{} `json:"extra,omitempty"`
+		Groups   *[]string               `json:"groups,omitempty"`
+		Uid      *string                 `json:"uid,omitempty"`
+		Username *string                 `json:"username,omitempty"`
+	} `json:"userInfo,omitempty"`
 }
+
+// RecordWithIDOperation defines model for RecordWithID.Operation.
+type RecordWithIDOperation string
 
 // AddRecordJSONRequestBody defines body for AddRecord for application/json ContentType.
 type AddRecordJSONRequestBody = Record
+
+// RequestEditorFn  is the function signature for the RequestEditor callback function
+type RequestEditorFn func(ctx context.Context, req *http.Request) error
+
+// Doer performs HTTP requests.
+//
+// The standard http.Client implements this interface.
+type HttpRequestDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// Client which conforms to the OpenAPI3 specification for this service.
+type Client struct {
+	// The endpoint of the server conforming to this interface, with scheme,
+	// https://api.deepmap.com for example. This can contain a path relative
+	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// paths in the swagger spec will be appended to the server.
+	Server string
+
+	// Doer for performing requests, typically a *http.Client with any
+	// customized settings, such as certificate chains.
+	Client HttpRequestDoer
+
+	// A list of callbacks for modifying requests which are generated before sending over
+	// the network.
+	RequestEditors []RequestEditorFn
+}
+
+// ClientOption allows setting custom parameters during construction
+type ClientOption func(*Client) error
+
+// Creates a new Client, with reasonable defaults
+func NewClient(server string, opts ...ClientOption) (*Client, error) {
+	// create a client with sane default values
+	client := Client{
+		Server: server,
+	}
+	// mutate client and add all optional params
+	for _, o := range opts {
+		if err := o(&client); err != nil {
+			return nil, err
+		}
+	}
+	// ensure the server URL always has a trailing slash
+	if !strings.HasSuffix(client.Server, "/") {
+		client.Server += "/"
+	}
+	// create httpClient, if not already present
+	if client.Client == nil {
+		client.Client = &http.Client{}
+	}
+	return &client, nil
+}
+
+// WithHTTPClient allows overriding the default Doer, which is
+// automatically created using http.Client. This is useful for tests.
+func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+	return func(c *Client) error {
+		c.Client = doer
+		return nil
+	}
+}
+
+// WithRequestEditorFn allows setting up a callback function, which will be
+// called right before sending the request. This can be used to mutate the request.
+func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+	return func(c *Client) error {
+		c.RequestEditors = append(c.RequestEditors, fn)
+		return nil
+	}
+}
+
+// The interface specification for the client above.
+type ClientInterface interface {
+	// ListRecords request
+	ListRecords(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddRecordWithBody request with any body
+	AddRecordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AddRecord(ctx context.Context, body AddRecordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) ListRecords(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRecordsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddRecordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddRecordRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddRecord(ctx context.Context, body AddRecordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddRecordRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewListRecordsRequest generates requests for ListRecords
+func NewListRecordsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/record")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddRecordRequest calls the generic AddRecord builder with application/json body
+func NewAddRecordRequest(server string, body AddRecordJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddRecordRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAddRecordRequestWithBody generates requests for AddRecord with any type of body
+func NewAddRecordRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/record")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
+	for _, r := range c.RequestEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	for _, r := range additionalEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ClientWithResponses builds on ClientInterface to offer response payloads
+type ClientWithResponses struct {
+	ClientInterface
+}
+
+// NewClientWithResponses creates a new ClientWithResponses, which wraps
+// Client with return type handling
+func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
+	client, err := NewClient(server, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &ClientWithResponses{client}, nil
+}
+
+// WithBaseURL overrides the baseURL.
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *Client) error {
+		newBaseURL, err := url.Parse(baseURL)
+		if err != nil {
+			return err
+		}
+		c.Server = newBaseURL.String()
+		return nil
+	}
+}
+
+// ClientWithResponsesInterface is the interface specification for the client with responses above.
+type ClientWithResponsesInterface interface {
+	// ListRecordsWithResponse request
+	ListRecordsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListRecordsResponse, error)
+
+	// AddRecordWithBodyWithResponse request with any body
+	AddRecordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddRecordResponse, error)
+
+	AddRecordWithResponse(ctx context.Context, body AddRecordJSONRequestBody, reqEditors ...RequestEditorFn) (*AddRecordResponse, error)
+}
+
+type ListRecordsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]RecordWithID
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRecordsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRecordsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AddRecordResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *[]RecordWithID
+}
+
+// Status returns HTTPResponse.Status
+func (r AddRecordResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddRecordResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ListRecordsWithResponse request returning *ListRecordsResponse
+func (c *ClientWithResponses) ListRecordsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListRecordsResponse, error) {
+	rsp, err := c.ListRecords(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRecordsResponse(rsp)
+}
+
+// AddRecordWithBodyWithResponse request with arbitrary body returning *AddRecordResponse
+func (c *ClientWithResponses) AddRecordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddRecordResponse, error) {
+	rsp, err := c.AddRecordWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddRecordResponse(rsp)
+}
+
+func (c *ClientWithResponses) AddRecordWithResponse(ctx context.Context, body AddRecordJSONRequestBody, reqEditors ...RequestEditorFn) (*AddRecordResponse, error) {
+	rsp, err := c.AddRecord(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddRecordResponse(rsp)
+}
+
+// ParseListRecordsResponse parses an HTTP response from a ListRecordsWithResponse call
+func ParseListRecordsResponse(rsp *http.Response) (*ListRecordsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRecordsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []RecordWithID
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddRecordResponse parses an HTTP response from a AddRecordWithResponse call
+func ParseAddRecordResponse(rsp *http.Response) (*AddRecordResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddRecordResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest []RecordWithID
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -117,14 +600,23 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

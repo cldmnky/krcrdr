@@ -47,8 +47,65 @@ components:
   schemas:
     record:
       properties: 
-        name: 
+        changeTimestamp:
           type: string
+          format: date-time
+        operation:
+          type: string
+          enum:
+          - CREATE
+          - UPDATE
+          - DELETE
+        cluster:
+          type: string
+        userInfo:
+          type: object
+          properties:
+            username:
+              type: string
+            uid:
+              type: string
+            groups:
+              type: array
+              items:
+                type: string
+            extra:
+              type: object
+              additionalProperties: true
+        kind:
+          type: object
+          properties:
+            group:
+              type: string
+            version:
+              type: string
+            kind:
+              type: string
+        uid:
+          type: string
+        resource:
+          type: object
+          properties:
+            group:
+              type: string
+            version:
+              type: string
+            resource:
+              type: string
+        generation:
+          type: integer
+        jsonPatch:
+          type: string
+        jsonPatch6902:
+          type: string
+        diffString:
+          type: string
+        name:
+          type: string
+        namespace:
+          type: string
+        objectMeta:
+          $ref: '#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
       required:
         - name
     recordWithID:
@@ -71,6 +128,98 @@ components:
         message:
           type: string
           description: Error message
+    # K8s
+    io.k8s.apimachinery.pkg.apis.meta.v1.Time:
+      format: date-time
+      type: string
+    io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta:
+      properties:
+        annotations:
+          additionalProperties:
+            type: string
+          type: object
+        creationTimestamp:
+          $ref: '#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+        deletionGracePeriodSeconds:
+          format: int64
+          type: integer
+        deletionTimestamp:
+          $ref: '#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+        finalizers:
+          items:
+            type: string
+          type: array
+          x-kubernetes-patch-strategy: merge
+        generateName:
+          type: string
+        generation:
+          format: int64
+          type: integer
+        labels:
+          additionalProperties:
+            type: string
+          type: object
+        managedFields:
+          items:
+            $ref: '#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry'
+          type: array
+        name:
+          type: string
+        namespace:
+          type: string
+        ownerReferences:
+          items:
+            $ref: '#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.OwnerReference'
+          type: array
+          x-kubernetes-patch-merge-key: uid
+          x-kubernetes-patch-strategy: merge
+        resourceVersion:
+          type: string
+        selfLink:
+          type: string
+        uid:
+          type: string
+      type: object
+    io.k8s.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry:
+      properties:
+        apiVersion:
+          type: string
+        fieldsType:
+          type: string
+        fieldsV1:
+          $ref: '#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.FieldsV1'
+        manager:
+          type: string
+        operation:
+          type: string
+        subresource:
+          type: string
+        time:
+          $ref: '#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+      type: object
+    io.k8s.apimachinery.pkg.apis.meta.v1.FieldsV1:
+      type: object
+    io.k8s.apimachinery.pkg.apis.meta.v1.OwnerReference:
+      properties:
+        apiVersion:
+          description: API version of the referent.
+          type: string
+        blockOwnerDeletion:
+          type: boolean
+        controller:
+          type: boolean
+        kind:
+          type: string
+        name:
+          type: string
+        uid:
+          type: string
+      required:
+        - apiVersion
+        - kind
+        - name
+        - uid
+      type: object
   securitySchemes:
     BearerAuth:
       type: http
@@ -78,4 +227,5 @@ components:
       bearerFormat: JWT
 security:
   - BearerAuth: [ ]
+
 

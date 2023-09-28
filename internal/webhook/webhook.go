@@ -6,10 +6,13 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/cldmnky/krcrdr/internal/recorder"
 )
+
+var webhooklog = logf.Log.WithName("webhook")
 
 // +kubebuilder:webhook:path=/recorder,mutating=false,failurePolicy=ignore,groups="*",resources="*",verbs=create;update;delete,versions="*",name=recorder.blahonga.me,sideEffects=None,admissionReviewVersions=v1
 
@@ -19,6 +22,10 @@ type RecorderWebhook struct {
 	Recorder recorder.Recorder
 }
 
+// Handle handles the admission request and records it.
+// It decodes the old and new objects from the admission request,
+// records the request using the Recorder, and returns an admission response
+// indicating that the request was allowed and recorded.
 func (v *RecorderWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
 	target := &unstructured.Unstructured{}
 	object := &unstructured.Unstructured{}
@@ -28,10 +35,13 @@ func (v *RecorderWebhook) Handle(ctx context.Context, req admission.Request) adm
 
 	err := v.Recorder.FromAdmissionRequest(target, object, &req.AdmissionRequest)
 	if err != nil {
-		fmt.Println(err)
+		webhooklog.Error(err, "failed to record request")
+		return admission.Allowed(fmt.Sprintf("failed to record request: %v", err))
 	}
-
-	fmt.Println(v.Recorder.String())
-
+	err = v.Recorder.SendToApiServer()
+	if err != nil {
+		webhooklog.Error(err, "failed to send request to API server")
+		return admission.Denied(fmt.Sprintf("failed to send request to API server: %v", err))
+	}
 	return admission.Allowed("recorded")
 }

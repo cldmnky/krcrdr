@@ -2,12 +2,14 @@ package recorder
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
 	"time"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/ghodss/yaml"
-	jsonpatch6902 "github.com/mattbaird/jsonpatch"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	jsonpatch6902 "gomodules.xyz/jsonpatch/v2"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -19,8 +21,10 @@ import (
 
 //go:generate mockery --name RecorderMock
 type Recorder interface {
-	String() string
 	FromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) error
+	ToYaml() (string, error)
+	OperationType() admissionv1.Operation
+	SendToApiServer() error
 }
 
 type recorder struct {
@@ -41,25 +45,52 @@ func (r *recorder) FromAdmissionRequest(oldObject, newObject *unstructured.Unstr
 	return nil
 }
 
-func (r *recorder) String() string {
-	return r.record.String()
+// SendToApiServer sends the record to the API server
+func (r *recorder) SendToApiServer() error {
+	if r.record == nil {
+		return fmt.Errorf("no record to send")
+	}
+	// Todo: send to API server
+	// For now just write to a file
+	fileName := fmt.Sprintf("%s-%s-%s.yaml", r.record.Operation, *r.record.Namespace, r.record.Name)
+	file, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	yamlString, err := r.ToYaml()
+	if err != nil {
+		return err
+	}
+	_, err = file.WriteString(yamlString)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (r *recorder) ToYaml() (string, error) {
+	return r.record.ToYaml()
+}
+
+func (r *recorder) OperationType() admissionv1.Operation {
+	return r.record.Operation
 }
 
 type record struct {
-	ChangeTimestamp time.Time                          `json:"changeTimestamp"`
-	Operation       admissionv1.Operation              `json:"operation"`
-	Cluster         string                             `json:"cluster"`
-	Namespace       *string                            `json:"namespace"`
-	Name            string                             `json:"name"`
-	UID             types.UID                          `json:"uid"`
-	UserInfo        authenticationv1.UserInfo          `json:"userInfo"`
-	Kind            metav1.GroupVersionKind            `json:"kind"`
-	Resource        metav1.GroupVersionResource        `json:"resource"`
-	Generation      *int64                             `json:"generation"`
-	JSONPatch       string                             `json:"jsonpatch"`
-	JSONPatch6902   []jsonpatch6902.JsonPatchOperation `json:"jsonpatch6902"`
-	DiffString      string                             `json:"diffstring"`
-	ObjectMeta      metav1.ObjectMeta                  `json:"objectmeta"`
+	ChangeTimestamp time.Time                   `json:"changeTimestamp"`
+	Operation       admissionv1.Operation       `json:"operation"`
+	Cluster         string                      `json:"cluster"`
+	Namespace       *string                     `json:"namespace"`
+	Name            string                      `json:"name"`
+	UID             types.UID                   `json:"uid"`
+	UserInfo        authenticationv1.UserInfo   `json:"userInfo"`
+	Kind            metav1.GroupVersionKind     `json:"kind"`
+	Resource        metav1.GroupVersionResource `json:"resource"`
+	Generation      *int64                      `json:"generation"`
+	JSONPatch       string                      `json:"jsonPatch"`
+	JSONPatch6902   string                      `json:"jsonPatch6902"`
+	DiffString      string                      `json:"diffstring"`
+	ObjectMeta      metav1.ObjectMeta           `json:"objectMeta"`
 }
 
 func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) (*record, error) {
@@ -67,7 +98,6 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 	var objectMeta metav1.ObjectMeta
 	var uid types.UID
 	var patch []byte
-	var patch6902 []jsonpatch6902.JsonPatchOperation = nil
 	var err error
 
 	old, _ := json.Marshal(req.OldObject)
@@ -83,13 +113,6 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 			CreationTimestamp: newObject.GetCreationTimestamp(),
 		}
 		uid = newObject.GetUID()
-
-		patch, _ = jsonpatch.CreateMergePatch(old, new)
-		patch6902, err = jsonpatch6902.CreatePatch(old, new)
-		if err != nil {
-			patch6902 = nil
-		}
-
 	} else {
 
 		generation = oldObject.GetGeneration()
@@ -102,6 +125,19 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 		}
 		uid = oldObject.GetUID()
 	}
+	patch, err = jsonpatch.CreateMergePatch(old, new)
+	if err != nil {
+		patch = nil
+	}
+	p, err := jsonpatch6902.CreatePatch(old, new)
+	if err != nil {
+		p = nil
+	}
+	jp6902str := ""
+	for _, op := range p {
+		jp6902str += fmt.Sprintf("%s\n", op.Json())
+	}
+
 	oldY, _ := yaml.JSONToYAML(old)
 	newY, _ := yaml.JSONToYAML(new)
 	dmp := diffmatchpatch.New()
@@ -110,7 +146,7 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 	// Todo: get cluster name from config
 	cluster := "local"
 
-	return &record{
+	ret := &record{
 		ChangeTimestamp: time.Now(),
 		Operation:       req.Operation,
 		Cluster:         cluster,
@@ -122,13 +158,17 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 		Resource:        req.Resource,
 		Generation:      &generation,
 		ObjectMeta:      objectMeta,
-		DiffString:      dmp.DiffPrettyText(diffs),
+		DiffString:      dmp.DiffPrettyHtml(diffs),
 		JSONPatch:       string(patch),
-		JSONPatch6902:   patch6902,
-	}, nil
+		JSONPatch6902:   jp6902str,
+	}
+	return ret, nil
 }
 
-func (r *record) String() string {
-	b, _ := json.Marshal(r)
-	return string(b)
+func (r *record) ToYaml() (string, error) {
+	b, err := yaml.Marshal(r)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }

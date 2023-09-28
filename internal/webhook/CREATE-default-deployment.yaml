@@ -1,0 +1,62 @@
+changeTimestamp: "2023-09-28T19:45:28.309346+02:00"
+cluster: local
+diffstring: '<ins style="background:#e6ffe6;">apiVersion: apps/v1&para;<br>kind: Deployment&para;<br>metadata:&para;<br>  creationTimestamp:
+  &#34;2023-09-28T17:45:28Z&#34;&para;<br>  generation: 1&para;<br>  labels:&para;<br>    app:
+  test&para;<br>    changed: &#34;no&#34;&para;<br>  managedFields:&para;<br>  - apiVersion:
+  apps/v1&para;<br>    fieldsType: FieldsV1&para;<br>    fieldsV1:&para;<br>      f:metadata:&para;<br>        f:labels:&para;<br>          .:
+  {}&para;<br>          f:app: {}&para;<br>          f:changed: {}&para;<br>      f:spec:&para;<br>        f:progressDeadlineSeconds:
+  {}&para;<br>        f:replicas: {}&para;<br>        f:revisionHistoryLimit: {}&para;<br>        f:selector:
+  {}&para;<br>        f:strategy:&para;<br>          f:rollingUpdate:&para;<br>            .:
+  {}&para;<br>            f:maxSurge: {}&para;<br>            f:maxUnavailable: {}&para;<br>          f:type:
+  {}&para;<br>        f:template:&para;<br>          f:metadata:&para;<br>            f:labels:&para;<br>              .:
+  {}&para;<br>              f:app: {}&para;<br>          f:spec:&para;<br>            f:containers:&para;<br>              k:{&#34;name&#34;:&#34;test&#34;}:&para;<br>                .:
+  {}&para;<br>                f:image: {}&para;<br>                f:imagePullPolicy:
+  {}&para;<br>                f:name: {}&para;<br>                f:ports:&para;<br>                  .:
+  {}&para;<br>                  k:{&#34;containerPort&#34;:80,&#34;protocol&#34;:&#34;TCP&#34;}:&para;<br>                    .:
+  {}&para;<br>                    f:containerPort: {}&para;<br>                    f:protocol:
+  {}&para;<br>                f:resources: {}&para;<br>                f:terminationMessagePath:
+  {}&para;<br>                f:terminationMessagePolicy: {}&para;<br>            f:dnsPolicy:
+  {}&para;<br>            f:restartPolicy: {}&para;<br>            f:schedulerName:
+  {}&para;<br>            f:securityContext: {}&para;<br>            f:terminationGracePeriodSeconds:
+  {}&para;<br>    manager: webhook.test&para;<br>    operation: Update&para;<br>    time:
+  &#34;2023-09-28T17:45:28Z&#34;&para;<br>  name: deployment&para;<br>  namespace:
+  default&para;<br>  uid: ed43c560-fa9e-40e4-9174-ed30a5f7385e&para;<br>spec:&para;<br>  progressDeadlineSeconds:
+  600&para;<br>  replicas: 3&para;<br>  revisionHistoryLimit: 10&para;<br>  selector:&para;<br>    matchLabels:&para;<br>      app:
+  test&para;<br>  strategy:&para;<br>    rollingUpdate:&para;<br>      maxSurge: 25%&para;<br>      maxUnavailable:
+  25%&para;<br>    type: RollingUpdate&para;<br>  template:&para;<br>    metadata:&para;<br>      creationTimestamp:
+  </ins><span>null&para;<br></span><ins style="background:#e6ffe6;">      labels:&para;<br>        app:
+  test&para;<br>    spec:&para;<br>      containers:&para;<br>      - image: test:1.2.3&para;<br>        imagePullPolicy:
+  IfNotPresent&para;<br>        name: test&para;<br>        ports:&para;<br>        -
+  containerPort: 80&para;<br>          protocol: TCP&para;<br>        resources: {}&para;<br>        terminationMessagePath:
+  /dev/termination-log&para;<br>        terminationMessagePolicy: File&para;<br>      dnsPolicy:
+  ClusterFirst&para;<br>      restartPolicy: Always&para;<br>      schedulerName:
+  default-scheduler&para;<br>      securityContext: {}&para;<br>      terminationGracePeriodSeconds:
+  30&para;<br>status: {}&para;<br></ins>'
+generation: 1
+jsonPatch: '{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"creationTimestamp":"2023-09-28T17:45:28Z","generation":1,"labels":{"app":"test","changed":"no"},"managedFields":[{"apiVersion":"apps/v1","fieldsType":"FieldsV1","fieldsV1":{"f:metadata":{"f:labels":{".":{},"f:app":{},"f:changed":{}}},"f:spec":{"f:progressDeadlineSeconds":{},"f:replicas":{},"f:revisionHistoryLimit":{},"f:selector":{},"f:strategy":{"f:rollingUpdate":{".":{},"f:maxSurge":{},"f:maxUnavailable":{}},"f:type":{}},"f:template":{"f:metadata":{"f:labels":{".":{},"f:app":{}}},"f:spec":{"f:containers":{"k:{\"name\":\"test\"}":{".":{},"f:image":{},"f:imagePullPolicy":{},"f:name":{},"f:ports":{".":{},"k:{\"containerPort\":80,\"protocol\":\"TCP\"}":{".":{},"f:containerPort":{},"f:protocol":{}}},"f:resources":{},"f:terminationMessagePath":{},"f:terminationMessagePolicy":{}}},"f:dnsPolicy":{},"f:restartPolicy":{},"f:schedulerName":{},"f:securityContext":{},"f:terminationGracePeriodSeconds":{}}}}},"manager":"webhook.test","operation":"Update","time":"2023-09-28T17:45:28Z"}],"name":"deployment","namespace":"default","uid":"ed43c560-fa9e-40e4-9174-ed30a5f7385e"},"spec":{"progressDeadlineSeconds":600,"replicas":3,"revisionHistoryLimit":10,"selector":{"matchLabels":{"app":"test"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"creationTimestamp":null,"labels":{"app":"test"}},"spec":{"containers":[{"image":"test:1.2.3","imagePullPolicy":"IfNotPresent","name":"test","ports":[{"containerPort":80,"protocol":"TCP"}],"resources":{},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File"}],"dnsPolicy":"ClusterFirst","restartPolicy":"Always","schedulerName":"default-scheduler","securityContext":{},"terminationGracePeriodSeconds":30}}},"status":{}}'
+jsonPatch6902: |
+  {"op":"replace","path":"","value":{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"creationTimestamp":"2023-09-28T17:45:28Z","generation":1,"labels":{"app":"test","changed":"no"},"managedFields":[{"apiVersion":"apps/v1","fieldsType":"FieldsV1","fieldsV1":{"f:metadata":{"f:labels":{".":{},"f:app":{},"f:changed":{}}},"f:spec":{"f:progressDeadlineSeconds":{},"f:replicas":{},"f:revisionHistoryLimit":{},"f:selector":{},"f:strategy":{"f:rollingUpdate":{".":{},"f:maxSurge":{},"f:maxUnavailable":{}},"f:type":{}},"f:template":{"f:metadata":{"f:labels":{".":{},"f:app":{}}},"f:spec":{"f:containers":{"k:{\"name\":\"test\"}":{".":{},"f:image":{},"f:imagePullPolicy":{},"f:name":{},"f:ports":{".":{},"k:{\"containerPort\":80,\"protocol\":\"TCP\"}":{".":{},"f:containerPort":{},"f:protocol":{}}},"f:resources":{},"f:terminationMessagePath":{},"f:terminationMessagePolicy":{}}},"f:dnsPolicy":{},"f:restartPolicy":{},"f:schedulerName":{},"f:securityContext":{},"f:terminationGracePeriodSeconds":{}}}}},"manager":"webhook.test","operation":"Update","time":"2023-09-28T17:45:28Z"}],"name":"deployment","namespace":"default","uid":"ed43c560-fa9e-40e4-9174-ed30a5f7385e"},"spec":{"progressDeadlineSeconds":600,"replicas":3,"revisionHistoryLimit":10,"selector":{"matchLabels":{"app":"test"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"creationTimestamp":null,"labels":{"app":"test"}},"spec":{"containers":[{"image":"test:1.2.3","imagePullPolicy":"IfNotPresent","name":"test","ports":[{"containerPort":80,"protocol":"TCP"}],"resources":{},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File"}],"dnsPolicy":"ClusterFirst","restartPolicy":"Always","schedulerName":"default-scheduler","securityContext":{},"terminationGracePeriodSeconds":30}}},"status":{}}}
+kind:
+  group: apps
+  kind: Deployment
+  version: v1
+name: deployment
+namespace: default
+objectMeta:
+  creationTimestamp: "2023-09-28T17:45:28Z"
+  labels:
+    app: test
+    changed: "no"
+  name: deployment
+  namespace: default
+operation: CREATE
+resource:
+  group: apps
+  resource: deployments
+  version: v1
+uid: ed43c560-fa9e-40e4-9174-ed30a5f7385e
+userInfo:
+  groups:
+  - system:masters
+  - system:authenticated
+  username: admin

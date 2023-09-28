@@ -1,0 +1,21 @@
+changeTimestamp: "2023-09-28T19:45:29.385916+02:00"
+cluster: local
+diffstring: <span>null&para;<br></span>
+generation: 0
+jsonPatch: '{}'
+jsonPatch6902: ""
+kind:
+  group: ""
+  kind: ""
+  version: ""
+name: test
+namespace: test
+objectMeta:
+  creationTimestamp: null
+operation: DELETE
+resource:
+  group: ""
+  resource: ""
+  version: ""
+uid: ""
+userInfo: {}

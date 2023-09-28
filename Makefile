@@ -52,7 +52,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(MOCKERY) --all --keeptree --case=underscore --output=./mocks
-	$(OAPI-CODEGEN) -package api --generate gin,types,spec internal/api/spec/api.yaml > internal/api/handlers/record/api/api.go
+	$(OAPI-CODEGEN) -package api --generate gin,types,spec,client internal/api/spec/api.yaml > internal/api/handlers/record/api/api.go
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -64,7 +64,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out -v
 
 ##@ Build
 

@@ -6,7 +6,6 @@ require (
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/getkin/kin-openapi v0.120.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/mattbaird/jsonpatch v0.0.0-20230413205102-771768614e91
 	github.com/oapi-codegen/gin-middleware v1.0.1
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10
@@ -100,7 +99,7 @@ require (
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.12.0 // indirect
-	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
