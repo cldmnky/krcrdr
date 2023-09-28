@@ -16,9 +16,15 @@ type JWSValidator interface {
 	ValidateJWS(jws string) (jwt.Token, error)
 }
 
+type Tenant struct {
+	ID   string `json:"id"`
+	Role string `json:"role"`
+}
+
 const (
 	JWTClaimsContextKey = "jwt_claims"
-	PermissonClaim      = "perms"
+	PermissonClaim      = "permissions"
+	TenantClaim         = "tenant"
 )
 
 var (
@@ -73,11 +79,10 @@ func Authenticate(ctx context.Context, input *openapi3filter.AuthenticationInput
 	return nil
 }
 
-// getClaimsFromToken returns a list of claims from the token. We store these
-// as a list under the "perms" claim, short for permissions, to keep the token
-// shorter.
+// getClaimsFromToken returns a list of permissions claims from the token. We store these
+// as a list under the "permissions" claim
 func getClaimsFromToken(t jwt.Token) ([]string, error) {
-	rawPerms, ok := t.Get(PermissionsClaim)
+	rawPerms, ok := t.Get(PermissonClaim)
 	if !ok {
 		return make([]string, 0), nil
 	}

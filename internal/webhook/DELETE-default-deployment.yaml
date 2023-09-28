@@ -1,7 +1,7 @@
-changeTimestamp: "2023-09-28T19:45:28.315972+02:00"
+changeTimestamp: "2023-09-29T00:39:20.892836+02:00"
 cluster: local
 diffstring: '<del style="background:#ffe6e6;">apiVersion: apps/v1&para;<br>kind: Deployment&para;<br>metadata:&para;<br>  creationTimestamp:
-  &#34;2023-09-28T17:45:28Z&#34;&para;<br>  generation: 2&para;<br>  labels:&para;<br>    addedLabel:
+  &#34;2023-09-28T22:39:20Z&#34;&para;<br>  generation: 2&para;<br>  labels:&para;<br>    addedLabel:
   test&para;<br>    app: test&para;<br>    changed: &#34;yes&#34;&para;<br>  managedFields:&para;<br>  -
   apiVersion: apps/v1&para;<br>    fieldsType: FieldsV1&para;<br>    fieldsV1:&para;<br>      f:metadata:&para;<br>        f:labels:&para;<br>          .:
   {}&para;<br>          f:addedLabel: {}&para;<br>          f:app: {}&para;<br>          f:changed:
@@ -17,8 +17,8 @@ diffstring: '<del style="background:#ffe6e6;">apiVersion: apps/v1&para;<br>kind:
   {}&para;<br>            f:restartPolicy: {}&para;<br>            f:schedulerName:
   {}&para;<br>            f:securityContext: {}&para;<br>            f:terminationGracePeriodSeconds:
   {}&para;<br>    manager: webhook.test&para;<br>    operation: Update&para;<br>    time:
-  &#34;2023-09-28T17:45:28Z&#34;&para;<br>  name: deployment&para;<br>  namespace:
-  default&para;<br>  resourceVersion: &#34;199&#34;&para;<br>  uid: ed43c560-fa9e-40e4-9174-ed30a5f7385e&para;<br>spec:&para;<br>  paused:
+  &#34;2023-09-28T22:39:20Z&#34;&para;<br>  name: deployment&para;<br>  namespace:
+  default&para;<br>  resourceVersion: &#34;199&#34;&para;<br>  uid: 81cb04bc-6289-4fa3-809a-637a25fb3a96&para;<br>spec:&para;<br>  paused:
   true&para;<br>  progressDeadlineSeconds: 600&para;<br>  replicas: 3&para;<br>  revisionHistoryLimit:
   10&para;<br>  selector:&para;<br>    matchLabels:&para;<br>      app: test&para;<br>  strategy:&para;<br>    rollingUpdate:&para;<br>      maxSurge:
   25%&para;<br>      maxUnavailable: 25%&para;<br>    type: RollingUpdate&para;<br>  template:&para;<br>    metadata:&para;<br>      creationTimestamp:
@@ -40,7 +40,7 @@ kind:
 name: deployment
 namespace: default
 objectMeta:
-  creationTimestamp: "2023-09-28T17:45:28Z"
+  creationTimestamp: "2023-09-28T22:39:20Z"
   labels:
     addedLabel: test
     app: test
@@ -52,7 +52,7 @@ resource:
   group: apps
   resource: deployments
   version: v1
-uid: ed43c560-fa9e-40e4-9174-ed30a5f7385e
+uid: 81cb04bc-6289-4fa3-809a-637a25fb3a96
 userInfo:
   groups:
   - system:masters

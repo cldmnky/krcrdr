@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMount(t *testing.T) {
+func TestApi(t *testing.T) {
 	// Create a new gin engine
 	r := gin.New()
 
@@ -27,7 +27,11 @@ func TestMount(t *testing.T) {
 	}
 
 	// Create a JWT token with the fake authenticator that has the write and read premissions
-	wJWT, err := fa.CreateJWSWithClaims([]string{"records:w", "records:r"})
+	tenant := Tenant{
+		ID:   "test",
+		Role: "admin",
+	}
+	wJWT, err := fa.CreateJWSWithClaims([]string{"records:w", "records:r"}, tenant)
 	require.NoError(t, err)
 
 	// Create a new HTTP request to the /records endpoint, add bearer authenticaion

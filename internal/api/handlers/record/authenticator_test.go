@@ -44,7 +44,6 @@ func TestGetJWSFromRequest(t *testing.T) {
 
 func TestAuthenticate(t *testing.T) {
 	validator := &mockValidator{}
-	//g := gin.New()
 
 	// Test unsupported security scheme
 	input := &openapi3filter.AuthenticationInput{
@@ -95,7 +94,7 @@ func TestCheckTokenClaims(t *testing.T) {
 			expectedClaims: []string{"read", "write"},
 			token:          jwt.New(),
 			tokenClaims:    []interface{}{"read", "write"},
-			tokenClaimName: "perm",
+			tokenClaimName: PermissonClaim,
 			wantErr:        false,
 		},
 		{
@@ -103,7 +102,7 @@ func TestCheckTokenClaims(t *testing.T) {
 			expectedClaims: []string{"read", "write", "delete"},
 			token:          jwt.New(),
 			tokenClaims:    []interface{}{"read", "write"},
-			tokenClaimName: "perm",
+			tokenClaimName: PermissonClaim,
 			wantErr:        true,
 		},
 		{
@@ -111,7 +110,7 @@ func TestCheckTokenClaims(t *testing.T) {
 			expectedClaims: []string{"read", "write"},
 			token:          jwt.New(),
 			tokenClaims:    []interface{}{"read", "write", "delete"},
-			tokenClaimName: "perm",
+			tokenClaimName: PermissonClaim,
 			wantErr:        false,
 		},
 		{
@@ -119,7 +118,7 @@ func TestCheckTokenClaims(t *testing.T) {
 			expectedClaims: []string{},
 			token:          jwt.New(),
 			tokenClaims:    []interface{}{},
-			tokenClaimName: "perm",
+			tokenClaimName: PermissonClaim,
 			wantErr:        false,
 		},
 		{
@@ -135,7 +134,7 @@ func TestCheckTokenClaims(t *testing.T) {
 			expectedClaims: []string{"read", "write"},
 			token:          jwt.New(),
 			tokenClaims:    []interface{}{},
-			tokenClaimName: "perm",
+			tokenClaimName: PermissonClaim,
 			wantErr:        true,
 		},
 	}

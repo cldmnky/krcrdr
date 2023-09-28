@@ -20,7 +20,6 @@ s9SlG/8hjB2Hz42v4p3haKWv3uS1C6ahCQ==
 const KeyID = `fake-key-id`
 const FakeIssuer = "fake-issuer"
 const FakeAudience = "example-users"
-const PermissionsClaim = "perm"
 
 type FakeAuthenticator struct {
 	PrivateKey *ecdsa.PrivateKey
@@ -79,9 +78,8 @@ func (f *FakeAuthenticator) SignToken(token jwt.Token) ([]byte, error) {
 	return jwt.Sign(token, jwa.ES256, f.PrivateKey, jwt.WithHeaders(header))
 }
 
-// CreateJWSWithClaims is a helper function to create JWT's with the specified
-// claims.
-func (f *FakeAuthenticator) CreateJWSWithClaims(claims []string) ([]byte, error) {
+// CreateJWSWithClaims is a helper function to create JWT's with the specified claims.
+func (f *FakeAuthenticator) CreateJWSWithClaims(permissions []string, tenant Tenant) ([]byte, error) {
 	t := jwt.New()
 	if err := t.Set(jwt.IssuerKey, FakeIssuer); err != nil {
 		return nil, fmt.Errorf("failed to set issuer: %w", err)
@@ -89,8 +87,11 @@ func (f *FakeAuthenticator) CreateJWSWithClaims(claims []string) ([]byte, error)
 	if err := t.Set(jwt.AudienceKey, FakeAudience); err != nil {
 		return nil, fmt.Errorf("failed to set audience: %w", err)
 	}
-	if err := t.Set(PermissionsClaim, claims); err != nil {
+	if err := t.Set(PermissonClaim, permissions); err != nil {
 		return nil, fmt.Errorf("failed to set permissions claim: %w", err)
+	}
+	if err := t.Set(TenantClaim, tenant); err != nil {
+		return nil, fmt.Errorf("failed to set tenant claim: %w", err)
 	}
 	return f.SignToken(t)
 }
