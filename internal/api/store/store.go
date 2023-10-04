@@ -26,7 +26,7 @@ type (
 	Store interface {
 		CreateTenant(ctx context.Context, tenantId string, tenant *Tenant) (*Tenant, error)
 		GetTenant(ctx context.Context, tenantId string) (*Tenant, error)
-		WriteStream(ctx context.Context, tenantId, subject string, record *api.Record) error
+		WriteStream(ctx context.Context, tenantId string, record *api.Record) error
 	}
 
 	store struct {
@@ -35,7 +35,7 @@ type (
 	}
 
 	StreamService interface {
-		Write(ctx context.Context, tenant, subject string, record *api.Record) error
+		Write(ctx context.Context, tenant string, record *api.Record) error
 	}
 
 	KVService interface {
@@ -66,8 +66,8 @@ func (s *store) GetTenant(ctx context.Context, tenantId string) (*Tenant, error)
 }
 
 // PutStream stores the given byte slice under the given key in the store.
-func (s *store) WriteStream(ctx context.Context, tenant, subject string, record *api.Record) error {
-	return s.stream.Write(ctx, tenant, subject, record)
+func (s *store) WriteStream(ctx context.Context, tenant string, record *api.Record) error {
+	return s.stream.Write(ctx, tenant, record)
 }
 
 // StreamService is the interface for a stream store.
@@ -86,18 +86,26 @@ func NewNatsStream(addr string) (StreamService, error) {
 	}, nil
 }
 
-func (s *natsStore) Write(ctx context.Context, tenantId, subject string, record *api.Record) error {
+func (s *natsStore) Write(ctx context.Context, tenantId string, record *api.Record) error {
 	// marshal the record to JSON.
 	recordJSON, err := json.Marshal(record)
 	if err != nil {
 		return err
 	}
+	subject := s.createSubjectFromRecord(record)
 	_, err = s.js.Publish(ctx, fmt.Sprintf("%s.%s", strings.ToUpper(tenantId), subject), recordJSON)
 	if err != nil {
 		return err
 	}
 	return nil
 
+}
+
+func (s *natsStore) createSubjectFromRecord(record *api.Record) string {
+	if record.Namespace == "" {
+		return fmt.Sprintf("%s.cluster.%s.%s", record.Cluster, record.Kind.Kind, record.Name)
+	}
+	return fmt.Sprintf("%s.namespace.%s.%s.%s", record.Cluster, record.Namespace, record.Kind.Kind, record.Name)
 }
 
 // KVService is the interface for a key-value store.

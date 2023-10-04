@@ -1,38 +1,38 @@
 package recorder
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"time"
 
+	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/ghodss/yaml"
+	"github.com/mitchellh/mapstructure"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	jsonpatch6902 "gomodules.xyz/jsonpatch/v2"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	authenticationv1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 //go:generate mockery --name RecorderMock
 type Recorder interface {
 	FromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) error
-	ToYaml() (string, error)
-	OperationType() admissionv1.Operation
-	SendToApiServer() error
+	SendToApiServer(ctx context.Context) error
 }
 
 type recorder struct {
-	record *record
+	record *api.Record
+	client api.ClientInterface
 }
 
-func NewRecorder() Recorder {
-	return &recorder{}
+func NewRecorder(client api.ClientInterface) Recorder {
+	return &recorder{
+		client: client,
+	}
 }
 
 func (r *recorder) FromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) error {
@@ -46,62 +46,54 @@ func (r *recorder) FromAdmissionRequest(oldObject, newObject *unstructured.Unstr
 }
 
 // SendToApiServer sends the record to the API server
-func (r *recorder) SendToApiServer() error {
+func (r *recorder) SendToApiServer(ctx context.Context) error {
 	if r.record == nil {
 		return fmt.Errorf("no record to send")
 	}
-	// Todo: send to API server
-	// For now just write to a file
-	fileName := fmt.Sprintf("%s-%s-%s.yaml", r.record.Operation, *r.record.Namespace, r.record.Name)
-	file, err := os.Create(fileName)
+	resp, err := r.client.AddRecord(ctx, *r.record)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	yamlString, err := r.ToYaml()
-	if err != nil {
-		return err
+	if resp == nil {
+		return fmt.Errorf("no response from API server")
 	}
-	_, err = file.WriteString(yamlString)
-	if err != nil {
-		return err
+	if resp.StatusCode > 399 {
+		return fmt.Errorf("error sending record: %s", resp.Status)
 	}
 	return nil
 }
+
 func (r *recorder) ToYaml() (string, error) {
-	return r.record.ToYaml()
+	y, err := yaml.Marshal(r.record)
+	if err != nil {
+		return "", err
+	}
+	return string(y), nil
 }
 
-func (r *recorder) OperationType() admissionv1.Operation {
-	return r.record.Operation
-}
-
-type record struct {
-	ChangeTimestamp time.Time                   `json:"changeTimestamp"`
-	Operation       admissionv1.Operation       `json:"operation"`
-	Cluster         string                      `json:"cluster"`
-	Namespace       *string                     `json:"namespace"`
-	Name            string                      `json:"name"`
-	UID             types.UID                   `json:"uid"`
-	UserInfo        authenticationv1.UserInfo   `json:"userInfo"`
-	Kind            metav1.GroupVersionKind     `json:"kind"`
-	Resource        metav1.GroupVersionResource `json:"resource"`
-	Generation      *int64                      `json:"generation"`
-	JSONPatch       string                      `json:"jsonPatch"`
-	JSONPatch6902   string                      `json:"jsonPatch6902"`
-	DiffString      string                      `json:"diffstring"`
-	ObjectMeta      metav1.ObjectMeta           `json:"objectMeta"`
-}
-
-func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) (*record, error) {
-	var generation int64
-	var objectMeta metav1.ObjectMeta
-	var uid types.UID
-	var patch []byte
-	var err error
+func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) (*api.Record, error) {
+	var (
+		patch      []byte
+		err        error
+		generation int64
+		objectMeta metav1.ObjectMeta
+	)
 
 	old, _ := json.Marshal(req.OldObject)
 	new, _ := json.Marshal(req.Object)
+
+	switch req.Operation {
+	case admissionv1.Create:
+		// new object
+	case admissionv1.Update:
+		// update
+	case admissionv1.Delete:
+		// old object
+	case admissionv1.Connect:
+		//pass
+	default:
+		return nil, fmt.Errorf("unknown operation type: %s", req.Operation)
+	}
 
 	if req.Operation != admissionv1.Operation(admissionregistrationv1.Delete) {
 		generation = newObject.GetGeneration()
@@ -112,7 +104,6 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 			Annotations:       newObject.GetAnnotations(),
 			CreationTimestamp: newObject.GetCreationTimestamp(),
 		}
-		uid = newObject.GetUID()
 	} else {
 
 		generation = oldObject.GetGeneration()
@@ -123,7 +114,6 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 			Annotations:       oldObject.GetAnnotations(),
 			CreationTimestamp: oldObject.GetCreationTimestamp(),
 		}
-		uid = oldObject.GetUID()
 	}
 	patch, err = jsonpatch.CreateMergePatch(old, new)
 	if err != nil {
@@ -146,29 +136,18 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 	// Todo: get cluster name from config
 	cluster := "local"
 
-	ret := &record{
-		ChangeTimestamp: time.Now(),
-		Operation:       req.Operation,
-		Cluster:         cluster,
-		Namespace:       &req.Namespace,
-		Name:            req.Name,
-		UID:             uid,
-		UserInfo:        req.UserInfo,
-		Kind:            req.Kind,
-		Resource:        req.Resource,
-		Generation:      &generation,
-		ObjectMeta:      objectMeta,
-		DiffString:      dmp.DiffPrettyHtml(diffs),
-		JSONPatch:       string(patch),
-		JSONPatch6902:   jp6902str,
+	record := &api.Record{}
+	mapstructure.Decode(req, record)
+	record.Name = req.Name
+	record.Generation = generation
+	record.Cluster = cluster
+	record.JsonPatch = string(patch)
+	record.JsonPatch6902 = jp6902str
+	record.DiffString = dmp.DiffPrettyHtml(diffs)
+	record.ObjectMeta = api.IoK8sApimachineryPkgApisMetaV1ObjectMeta{
+		Name:      &objectMeta.Name,
+		Namespace: &objectMeta.Namespace,
+		Labels:    &objectMeta.Labels,
 	}
-	return ret, nil
-}
-
-func (r *record) ToYaml() (string, error) {
-	b, err := yaml.Marshal(r)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
+	return record, nil
 }

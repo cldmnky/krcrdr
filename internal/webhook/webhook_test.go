@@ -6,19 +6,30 @@ import (
 	"testing"
 
 	"github.com/cldmnky/krcrdr/internal/recorder"
+	mockapi "github.com/cldmnky/krcrdr/test/mocks/internal_/api/handlers/record/api"
+	"github.com/stretchr/testify/mock"
 	admissionv1 "k8s.io/api/admission/v1"
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+var (
+	ctx = context.Background()
+)
+
 func TestRecorderWebhook_Handle(t *testing.T) {
+	// mock http client
+	apiClient := mockapi.NewClientInterface(t)
 	scheme := apimachineryruntime.NewScheme()
 	decoder := admission.NewDecoder(scheme)
-	recorder := recorder.NewRecorder()
+	recorder := recorder.NewRecorder(apiClient)
 	webhook := &RecorderWebhook{
 		Decoder:  decoder,
 		Recorder: recorder,
+		//Client:   apiClient,
 	}
+	dryRun := true
+	apiClient.EXPECT().AddRecord(ctx, mock.Anything).Return(nil, nil).Times(3)
 
 	tests := []struct {
 		name string
@@ -57,6 +68,18 @@ func TestRecorderWebhook_Handle(t *testing.T) {
 				},
 			},
 			want: admission.Allowed("recorded"),
+		},
+		{
+			name: "Test dry-run operation",
+			req: admission.Request{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Name:      "test",
+					Namespace: "test",
+					Operation: admissionv1.Delete,
+					DryRun:    &dryRun,
+				},
+			},
+			want: admission.Allowed("dry-run"),
 		},
 	}
 

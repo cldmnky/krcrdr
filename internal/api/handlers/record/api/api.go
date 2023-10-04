@@ -39,8 +39,37 @@ const (
 	RecordWithIDOperationUPDATE RecordWithIDOperation = "UPDATE"
 )
 
+// IoK8sApiAuthenticationV1UserInfo UserInfo holds the information about the user needed to implement the user.Info interface.
+type IoK8sApiAuthenticationV1UserInfo struct {
+	// Extra Any additional information provided by the authenticator.
+	Extra *map[string][]string `json:"extra,omitempty"`
+
+	// Groups The names of groups this user is a part of.
+	Groups *[]string `json:"groups,omitempty"`
+
+	// Uid A unique value that identifies this user across time. If this user is deleted and another user by the same name is added, they will have different UIDs.
+	Uid *string `json:"uid,omitempty"`
+
+	// Username The name that uniquely identifies this user among all active users.
+	Username *string `json:"username,omitempty"`
+}
+
 // IoK8sApimachineryPkgApisMetaV1FieldsV1 defines model for io.k8s.apimachinery.pkg.apis.meta.v1.FieldsV1.
 type IoK8sApimachineryPkgApisMetaV1FieldsV1 = map[string]interface{}
+
+// IoK8sApimachineryPkgApisMetaV1GroupVersionKind GroupVersionKind unambiguously identifies a kind.  It doesn't anonymously include GroupVersion to avoid automatic coercion.  It doesn't use a GroupVersion to avoid custom marshalling
+type IoK8sApimachineryPkgApisMetaV1GroupVersionKind struct {
+	Group   string `json:"group"`
+	Kind    string `json:"kind"`
+	Version string `json:"version"`
+}
+
+// IoK8sApimachineryPkgApisMetaV1GroupVersionResource defines model for io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionResource.
+type IoK8sApimachineryPkgApisMetaV1GroupVersionResource struct {
+	Group    string `json:"group"`
+	Resource string `json:"resource"`
+	Version  string `json:"version"`
+}
 
 // IoK8sApimachineryPkgApisMetaV1ManagedFieldsEntry defines model for io.k8s.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry.
 type IoK8sApimachineryPkgApisMetaV1ManagedFieldsEntry struct {
@@ -88,33 +117,24 @@ type IoK8sApimachineryPkgApisMetaV1Time = time.Time
 
 // Record defines model for record.
 type Record struct {
-	ChangeTimestamp *time.Time `json:"changeTimestamp,omitempty"`
-	Cluster         *string    `json:"cluster,omitempty"`
-	DiffString      *string    `json:"diffString,omitempty"`
-	Generation      *int       `json:"generation,omitempty"`
-	JsonPatch       *string    `json:"jsonPatch,omitempty"`
-	JsonPatch6902   *string    `json:"jsonPatch6902,omitempty"`
-	Kind            *struct {
-		Group   *string `json:"group,omitempty"`
-		Kind    *string `json:"kind,omitempty"`
-		Version *string `json:"version,omitempty"`
-	} `json:"kind,omitempty"`
-	Name       string                                    `json:"name"`
-	Namespace  *string                                   `json:"namespace,omitempty"`
-	ObjectMeta *IoK8sApimachineryPkgApisMetaV1ObjectMeta `json:"objectMeta,omitempty"`
-	Operation  *RecordOperation                          `json:"operation,omitempty"`
-	Resource   *struct {
-		Group    *string `json:"group,omitempty"`
-		Resource *string `json:"resource,omitempty"`
-		Version  *string `json:"version,omitempty"`
-	} `json:"resource,omitempty"`
-	Uid      *string `json:"uid,omitempty"`
-	UserInfo *struct {
-		Extra    *map[string]interface{} `json:"extra,omitempty"`
-		Groups   *[]string               `json:"groups,omitempty"`
-		Uid      *string                 `json:"uid,omitempty"`
-		Username *string                 `json:"username,omitempty"`
-	} `json:"userInfo,omitempty"`
+	ChangeTimestamp time.Time `json:"changeTimestamp"`
+	Cluster         string    `json:"cluster"`
+	DiffString      string    `json:"diffString"`
+	Generation      int64     `json:"generation"`
+	JsonPatch       string    `json:"jsonPatch"`
+	JsonPatch6902   string    `json:"jsonPatch6902"`
+
+	// Kind GroupVersionKind unambiguously identifies a kind.  It doesn't anonymously include GroupVersion to avoid automatic coercion.  It doesn't use a GroupVersion to avoid custom marshalling
+	Kind       IoK8sApimachineryPkgApisMetaV1GroupVersionKind     `json:"kind"`
+	Name       string                                             `json:"name"`
+	Namespace  string                                             `json:"namespace"`
+	ObjectMeta IoK8sApimachineryPkgApisMetaV1ObjectMeta           `json:"objectMeta"`
+	Operation  RecordOperation                                    `json:"operation"`
+	Resource   IoK8sApimachineryPkgApisMetaV1GroupVersionResource `json:"resource"`
+	Uid        string                                             `json:"uid"`
+
+	// Userinfo UserInfo holds the information about the user needed to implement the user.Info interface.
+	Userinfo *IoK8sApiAuthenticationV1UserInfo `json:"userinfo,omitempty"`
 }
 
 // RecordOperation defines model for Record.Operation.
@@ -122,34 +142,25 @@ type RecordOperation string
 
 // RecordWithID defines model for recordWithID.
 type RecordWithID struct {
-	ChangeTimestamp *time.Time `json:"changeTimestamp,omitempty"`
-	Cluster         *string    `json:"cluster,omitempty"`
-	DiffString      *string    `json:"diffString,omitempty"`
-	Generation      *int       `json:"generation,omitempty"`
-	Id              string     `json:"id"`
-	JsonPatch       *string    `json:"jsonPatch,omitempty"`
-	JsonPatch6902   *string    `json:"jsonPatch6902,omitempty"`
-	Kind            *struct {
-		Group   *string `json:"group,omitempty"`
-		Kind    *string `json:"kind,omitempty"`
-		Version *string `json:"version,omitempty"`
-	} `json:"kind,omitempty"`
-	Name       string                                    `json:"name"`
-	Namespace  *string                                   `json:"namespace,omitempty"`
-	ObjectMeta *IoK8sApimachineryPkgApisMetaV1ObjectMeta `json:"objectMeta,omitempty"`
-	Operation  *RecordWithIDOperation                    `json:"operation,omitempty"`
-	Resource   *struct {
-		Group    *string `json:"group,omitempty"`
-		Resource *string `json:"resource,omitempty"`
-		Version  *string `json:"version,omitempty"`
-	} `json:"resource,omitempty"`
-	Uid      *string `json:"uid,omitempty"`
-	UserInfo *struct {
-		Extra    *map[string]interface{} `json:"extra,omitempty"`
-		Groups   *[]string               `json:"groups,omitempty"`
-		Uid      *string                 `json:"uid,omitempty"`
-		Username *string                 `json:"username,omitempty"`
-	} `json:"userInfo,omitempty"`
+	ChangeTimestamp time.Time `json:"changeTimestamp"`
+	Cluster         string    `json:"cluster"`
+	DiffString      string    `json:"diffString"`
+	Generation      int64     `json:"generation"`
+	Id              string    `json:"id"`
+	JsonPatch       string    `json:"jsonPatch"`
+	JsonPatch6902   string    `json:"jsonPatch6902"`
+
+	// Kind GroupVersionKind unambiguously identifies a kind.  It doesn't anonymously include GroupVersion to avoid automatic coercion.  It doesn't use a GroupVersion to avoid custom marshalling
+	Kind       IoK8sApimachineryPkgApisMetaV1GroupVersionKind     `json:"kind"`
+	Name       string                                             `json:"name"`
+	Namespace  string                                             `json:"namespace"`
+	ObjectMeta IoK8sApimachineryPkgApisMetaV1ObjectMeta           `json:"objectMeta"`
+	Operation  RecordWithIDOperation                              `json:"operation"`
+	Resource   IoK8sApimachineryPkgApisMetaV1GroupVersionResource `json:"resource"`
+	Uid        string                                             `json:"uid"`
+
+	// Userinfo UserInfo holds the information about the user needed to implement the user.Info interface.
+	Userinfo *IoK8sApiAuthenticationV1UserInfo `json:"userinfo,omitempty"`
 }
 
 // RecordWithIDOperation defines model for RecordWithID.Operation.
@@ -600,23 +611,30 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/7RXUXPiNhD+Kx61j44D185NyxtXuA6du4Yh9O4hkwdhrY0OW3JX6yT0xv+9I9mAjQ0x",
-	"Se4Na6XVfrvffiu+s1CnmVagyLDRd2bCNaTc/ZQ62PxmAp7JlIdrqQC3QbaJ7YIJUiAePAyDjxISYb4M",
-	"7QHaZsBGTK++QUis8Pt5+MwVj0GUjqaKcGt9ZagzQJLgQuGZ/AJopFa1ewyhVLG9J3Jnl275pLmM8WeE",
-	"iI3YT9cH2NcV5uvLABc+S13o2HmpDZ/TqYhNvkIwOsewO2SSKbxJuEvrqLAeX1ScG7f9MxDvKIpSmhzE",
-	"8lMIaT94Mm9sa2M7jiREcG5srIZ4mr0hcp8JSMB6/xN5CHNAqcUthFoJF12kMeXERkwqev8r20cnFYEt",
-	"bc3Bjwkvkoon8j/AsucI0rNZ44h8y3z2dLXJV4AKCMxVxilcXxlCThBv2YilgLHzHoOyNIS/edpNtGpD",
-	"xdMe2Uj4CpJXFjytt3wD9qvT2qEmx8krfKZOpcMaTMZPdKV+VIALiABBhfDGkd80nPcruavz1QZszXMp",
-	"+vNiJz7nVNVAEn2SatNptLe111+uM03wzwwAASZEmZWsZeP5zHsojZ6OPFqDh6UnCg4UPoS+SnS4cRdO",
-	"qs6uIVlpnQBXTpa0ItRJ0hD4mn0jlThJosuShvBvLhEEG93VoVZ3VB7L8/cvTfGyGin7Hhec4MoNmo4k",
-	"IYQaRbsQ4ZqrGBpS2M9hmOSGTsxKIaPotvx6XqPakvTNaDW3VO88vbe+/33wrnPHrpBNpDHqPDu7v2V4",
-	"ONlNXY3xUhFqjOTXy87B3fGrBVSeWkb+sZiOl1Pms3/mk/LHZPppupzWuFgnzuFZ0zehZ59ClyW1u8V8",
-	"lhvAmYp0Oyx4IuSn5xlhDh33ODCXjOxnYjtBhjbEI7Vw5+73DftV0no2cWiS5CZio7vzFKnavPCPs9JH",
-	"qawaFfeFGxVhjpK2t9Zt6eADcAQc5+S6cuW+Pu6U4q+vS+aX/zWcqDrrQTXWRBkrrGNZlayt+JFGr4xe",
-	"qtgzlEeRdSApsR42GKKwHvfsYcNgEAwqjiueSTZiv7gln2Wc1i7o64PsxUDtiz9JQx5PEm/h9hlW65iZ",
-	"qDYcbAgm08qUCXk3GDgB1YpAUTnUskSG7vC1VanD/6/eL4tG1d3L6mlWnhsOBscMLNxjto7HzsrEYtLR",
-	"HlK9no4/9UreVTwzI3S191mmTUeixkJU1WmlaCzEYmexbAJDH7TYXpSbPpRuo126l4G1eqQ9qQwgBd4C",
-	"KEdlqneDtc4mrE50qwBFq5jDH1/M56pn8ZQoYJdt71HSugmlZz0fy14+u9nu+D8AAP//SynGWjEQAAA=",
+	"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",
+	"CQAA//+oVnDZmRUAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

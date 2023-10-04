@@ -97,8 +97,22 @@ var _ = Describe("Tenants", func() {
 			kv, err := NewNatsKV(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
 			Expect(err).NotTo(HaveOccurred())
 			s := NewStore(stream, kv)
-			err = s.WriteStream(context.Background(), "foo", "FOO.bar.baz", &api.Record{})
+			err = s.WriteStream(context.Background(), "foo", &api.Record{
+				Name:      "foo",
+				Namespace: "bar",
+				Cluster:   "baz",
+				Kind: struct {
+					Group   string `json:"group"`
+					Kind    string `json:"kind"`
+					Version string `json:"version"`
+				}{
+					Group:   "apps",
+					Kind:    "Deployment",
+					Version: "v1",
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
+
 		})
 	})
 })

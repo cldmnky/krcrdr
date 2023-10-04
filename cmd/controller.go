@@ -52,7 +52,7 @@ func runManager(wg *sync.WaitGroup) {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		webhookServer := mgr.GetWebhookServer()
 		dec := admission.NewDecoder(scheme)
-		r := recorder.NewRecorder()
+		r := recorder.NewRecorder(nil)
 		webhookServer.Register("/recorder", &k8swebhook.Admission{Handler: &webhook.RecorderWebhook{Client: mgr.GetClient(), Decoder: dec, Recorder: r}})
 	}
 	//+kubebuilder:scaffold:builder

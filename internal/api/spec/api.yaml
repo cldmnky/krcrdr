@@ -58,42 +58,17 @@ components:
           - DELETE
         cluster:
           type: string
-        userInfo:
-          type: object
-          properties:
-            username:
-              type: string
-            uid:
-              type: string
-            groups:
-              type: array
-              items:
-                type: string
-            extra:
-              type: object
-              additionalProperties: true
+        userinfo:
+          $ref: "#/components/schemas/io.k8s.api.authentication.v1.UserInfo"
         kind:
-          type: object
-          properties:
-            group:
-              type: string
-            version:
-              type: string
-            kind:
-              type: string
+          $ref: "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionKind"
         uid:
           type: string
         resource:
-          type: object
-          properties:
-            group:
-              type: string
-            version:
-              type: string
-            resource:
-              type: string
+          $ref: "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionResource"
         generation:
           type: integer
+          format: int64
         jsonPatch:
           type: string
         jsonPatch6902:
@@ -108,6 +83,19 @@ components:
           $ref: '#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
       required:
         - name
+        - cluster
+        - namespace
+        - kind
+        - changeTimestamp
+        - operation
+        - generation
+        - userInfo
+        - jsonPatch
+        - jsonPatch6902
+        - diffString
+        - objectMeta
+        - resource
+        - uid
     recordWithID:
       allOf:
         - $ref: '#/components/schemas/record'
@@ -129,6 +117,34 @@ components:
           type: string
           description: Error message
     # K8s
+    io.k8s.api.authentication.v1.UserInfo:
+      description: >-
+        UserInfo holds the information about the user needed to implement the
+        user.Info interface.
+      type: object
+      properties:
+        extra:
+          description: Any additional information provided by the authenticator.
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        groups:
+          description: The names of groups this user is a part of.
+          type: array
+          items:
+            type: string
+        uid:
+          description: >-
+            A unique value that identifies this user across time. If this user is
+            deleted and another user by the same name is added, they will have
+            different UIDs.
+          type: string
+        username:
+          description: The name that uniquely identifies this user among all active users.
+          type: string
+
     io.k8s.apimachinery.pkg.apis.meta.v1.Time:
       format: date-time
       type: string
@@ -220,6 +236,39 @@ components:
         - name
         - uid
       type: object
+
+    io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionKind:
+      description: >-
+        GroupVersionKind unambiguously identifies a kind.  It doesn't anonymously
+        include GroupVersion to avoid automatic coercion.  It doesn't use a
+        GroupVersion to avoid custom marshalling
+      type: object
+      required:
+        - group
+        - version
+        - kind
+      properties:
+        group:
+          type: string
+        kind:
+          type: string
+        version:
+          type: string
+
+    io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionResource:
+      type: object
+      required:
+        - group
+        - version
+        - resource
+      properties:
+        group:
+          type: string
+        version:
+          type: string
+        resource:
+          type: string
+
   securitySchemes:
     BearerAuth:
       type: http

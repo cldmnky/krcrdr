@@ -35,6 +35,7 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			s.Options.ApiLogger.Error(err, "failed to listen and serve")
 			os.Exit(1)
 		}
 	}()

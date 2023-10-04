@@ -27,6 +27,10 @@ type RecorderWebhook struct {
 // records the request using the Recorder, and returns an admission response
 // indicating that the request was allowed and recorded.
 func (v *RecorderWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
+	// Skip dry-run requests
+	if req.DryRun != nil && *req.DryRun {
+		return admission.Allowed("dry-run")
+	}
 	target := &unstructured.Unstructured{}
 	object := &unstructured.Unstructured{}
 
@@ -38,7 +42,7 @@ func (v *RecorderWebhook) Handle(ctx context.Context, req admission.Request) adm
 		webhooklog.Error(err, "failed to record request")
 		return admission.Allowed(fmt.Sprintf("failed to record request: %v", err))
 	}
-	err = v.Recorder.SendToApiServer()
+	err = v.Recorder.SendToApiServer(ctx)
 	if err != nil {
 		webhooklog.Error(err, "failed to send request to API server")
 		return admission.Denied(fmt.Sprintf("failed to send request to API server: %v", err))

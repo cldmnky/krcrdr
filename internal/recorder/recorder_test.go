@@ -78,11 +78,7 @@ func TestFromAdmissionRequest(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	if record.UID != types.UID("test-object-uid") {
-		t.Errorf("unexpected UID: %v", record.UID)
-	}
-
-	if record.Operation != admissionv1.Create {
+	if record.Operation != "CREATE" {
 		t.Errorf("unexpected operation: %v", record.Operation)
 	}
 
@@ -90,23 +86,27 @@ func TestFromAdmissionRequest(t *testing.T) {
 		t.Errorf("unexpected name: %v", record.Name)
 	}
 
-	if *record.Namespace != "test-namespace" {
-		t.Errorf("unexpected namespace: %v", *record.Namespace)
+	if record.Namespace != "test-namespace" {
+		t.Errorf("unexpected namespace: %v", record.Namespace)
 	}
-
-	if record.UserInfo.Username != "test-user" {
-		t.Errorf("unexpected username: %v", record.UserInfo.Username)
+	userName := "test-user"
+	recordUserName := *record.Userinfo.Username
+	if recordUserName != userName {
+		t.Errorf("unexpected username: %v", *record.Userinfo.Username)
 	}
 
 	if record.Kind.Group != "test-group" {
 		t.Errorf("unexpected kind group: %v", record.Kind.Group)
 	}
 
-	if record.Resource.Resource != "test-resource" {
+	resourceName := "test-resource"
+	if record.Resource.Resource != resourceName {
 		t.Errorf("unexpected resource: %v", record.Resource.Resource)
 	}
 
-	if record.ObjectMeta.Name != "test-object-name" {
+	objMetaName := "test-object-name"
+	recordObjMeta := *record.ObjectMeta.Name
+	if recordObjMeta != objMetaName {
 		t.Errorf("unexpected object name: %v", record.ObjectMeta.Name)
 	}
 

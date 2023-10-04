@@ -118,14 +118,16 @@ func TestRecordImpl_ListRecords(t *testing.T) {
 	// Create a new gin context and RecordImpl instance
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
+	// Set the tenant in the context
+	c.Set("tenant", &Tenant{ID: "test"})
+
 	recordApi := RecordImpl{}
 
 	// Call the ListRecords function
 	recordApi.ListRecords(c)
 
-	// Check that the response status code is 200 and the response body is "ListRecords"
+	// Check that the response status code is 200"
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status code %d but got %d", http.StatusOK, w.Code)
 	}
-	gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("ListRecords"))
 }

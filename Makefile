@@ -51,7 +51,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-	$(MOCKERY) --all --keeptree --case=underscore --output=./mocks
+	$(MOCKERY) --all --keeptree  --testonly=false --output=./test/mocks
 	$(OAPI-CODEGEN) -package api --generate gin,types,spec,client internal/api/spec/api.yaml > internal/api/handlers/record/api/api.go
 
 .PHONY: fmt
