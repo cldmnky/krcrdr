@@ -43,7 +43,7 @@ type (
 		GetTenant(ctx context.Context, tenantId string) (*Tenant, error)
 	}
 
-	natsStore struct {
+	NatsStore struct {
 		nc *nats.Conn
 		js jetstream.JetStream
 		kv jetstream.KeyValue
@@ -65,13 +65,13 @@ func (s *store) GetTenant(ctx context.Context, tenantId string) (*Tenant, error)
 	return s.kv.GetTenant(ctx, tenantId)
 }
 
-// PutStream stores the given byte slice under the given key in the store.
+// WriteStream writes a record to the stream.
 func (s *store) WriteStream(ctx context.Context, tenant string, record *api.Record) error {
 	return s.stream.Write(ctx, tenant, record)
 }
 
 // StreamService is the interface for a stream store.
-func NewNatsStream(addr string) (StreamService, error) {
+func NewNatsStream(addr string) (*NatsStore, error) {
 	nc, err := nats.Connect(addr)
 	if err != nil {
 		return nil, err
@@ -80,13 +80,13 @@ func NewNatsStream(addr string) (StreamService, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &natsStore{
+	return &NatsStore{
 		nc: nc,
 		js: js,
 	}, nil
 }
 
-func (s *natsStore) Write(ctx context.Context, tenantId string, record *api.Record) error {
+func (s *NatsStore) Write(ctx context.Context, tenantId string, record *api.Record) error {
 	// marshal the record to JSON.
 	recordJSON, err := json.Marshal(record)
 	if err != nil {
@@ -98,10 +98,9 @@ func (s *natsStore) Write(ctx context.Context, tenantId string, record *api.Reco
 		return err
 	}
 	return nil
-
 }
 
-func (s *natsStore) createSubjectFromRecord(record *api.Record) string {
+func (s *NatsStore) createSubjectFromRecord(record *api.Record) string {
 	if record.Namespace == "" {
 		return fmt.Sprintf("%s.cluster.%s.%s", record.Cluster, record.Kind.Kind, record.Name)
 	}
@@ -109,7 +108,7 @@ func (s *natsStore) createSubjectFromRecord(record *api.Record) string {
 }
 
 // KVService is the interface for a key-value store.
-func NewNatsKV(addr string) (KVService, error) {
+func NewNatsKV(addr string) (*NatsStore, error) {
 	nc, err := nats.Connect(addr)
 	if err != nil {
 		return nil, err
@@ -124,7 +123,7 @@ func NewNatsKV(addr string) (KVService, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &natsStore{
+	return &NatsStore{
 		nc: nc,
 		js: js,
 		kv: kv,
@@ -140,7 +139,7 @@ func (t *Tenant) ToJSON() ([]byte, error) {
 	return json.Marshal(t)
 }
 
-func (s *natsStore) CreateTenant(ctx context.Context, tenantId string, tenant *Tenant) (*Tenant, error) {
+func (s *NatsStore) CreateTenant(ctx context.Context, tenantId string, tenant *Tenant) (*Tenant, error) {
 	tenantJSON, err := tenant.ToJSON()
 	if err != nil {
 		return nil, err
@@ -171,7 +170,7 @@ func (s *natsStore) CreateTenant(ctx context.Context, tenantId string, tenant *T
 	return s.GetTenant(ctx, tenantId)
 }
 
-func (s *natsStore) GetTenant(ctx context.Context, tenantId string) (*Tenant, error) {
+func (s *NatsStore) GetTenant(ctx context.Context, tenantId string) (*Tenant, error) {
 	v, err := s.kv.Get(ctx, tenantId)
 	if err != nil {
 		return nil, err

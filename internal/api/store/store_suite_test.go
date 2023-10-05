@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
+	"github.com/cldmnky/krcrdr/internal/api/store/providers/nats"
 	"github.com/nats-io/nats-server/v2/server"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -45,7 +46,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	ns.Start()
 	Expect(ns.ReadyForConnections(10 * time.Second)).To(BeTrue())
-
 })
 
 var _ = AfterSuite(func() {
@@ -55,9 +55,9 @@ var _ = AfterSuite(func() {
 var _ = Describe("Tenants", func() {
 	var s Store
 	BeforeEach(func() {
-		stream, err := NewNatsStream(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
+		stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
 		Expect(err).NotTo(HaveOccurred())
-		kv, err := NewNatsKV(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
+		kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
 		Expect(err).NotTo(HaveOccurred())
 		s = NewStore(stream, kv)
 	})
@@ -68,6 +68,9 @@ var _ = Describe("Tenants", func() {
 		ret, err := s.CreateTenant(context.Background(), "foo", tenant)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(ret).To(Equal(tenant))
+		storeTenant, err := s.GetTenant(context.Background(), "foo")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(tenant).To(Equal(storeTenant))
 	})
 	It("should get tenants", func() {
 		tenant := &Tenant{

@@ -58,7 +58,7 @@ components:
           - DELETE
         cluster:
           type: string
-        userinfo:
+        userInfo:
           $ref: "#/components/schemas/io.k8s.api.authentication.v1.UserInfo"
         kind:
           $ref: "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionKind"
