@@ -5,8 +5,6 @@ package store
 import (
 	context "context"
 
-	apistore "github.com/cldmnky/krcrdr/internal/api/store"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -24,23 +22,23 @@ func (_m *KVService) EXPECT() *KVService_Expecter {
 }
 
 // CreateTenant provides a mock function with given fields: ctx, tenantId, tenant
-func (_m *KVService) CreateTenant(ctx context.Context, tenantId string, tenant *apistore.Tenant) (*apistore.Tenant, error) {
+func (_m *KVService) CreateTenant(ctx context.Context, tenantId string, tenant []byte) ([]byte, error) {
 	ret := _m.Called(ctx, tenantId, tenant)
 
-	var r0 *apistore.Tenant
+	var r0 []byte
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *apistore.Tenant) (*apistore.Tenant, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) ([]byte, error)); ok {
 		return rf(ctx, tenantId, tenant)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *apistore.Tenant) *apistore.Tenant); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) []byte); ok {
 		r0 = rf(ctx, tenantId, tenant)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*apistore.Tenant)
+			r0 = ret.Get(0).([]byte)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *apistore.Tenant) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, []byte) error); ok {
 		r1 = rf(ctx, tenantId, tenant)
 	} else {
 		r1 = ret.Error(1)
@@ -57,42 +55,42 @@ type KVService_CreateTenant_Call struct {
 // CreateTenant is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tenantId string
-//   - tenant *apistore.Tenant
+//   - tenant []byte
 func (_e *KVService_Expecter) CreateTenant(ctx interface{}, tenantId interface{}, tenant interface{}) *KVService_CreateTenant_Call {
 	return &KVService_CreateTenant_Call{Call: _e.mock.On("CreateTenant", ctx, tenantId, tenant)}
 }
 
-func (_c *KVService_CreateTenant_Call) Run(run func(ctx context.Context, tenantId string, tenant *apistore.Tenant)) *KVService_CreateTenant_Call {
+func (_c *KVService_CreateTenant_Call) Run(run func(ctx context.Context, tenantId string, tenant []byte)) *KVService_CreateTenant_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(*apistore.Tenant))
+		run(args[0].(context.Context), args[1].(string), args[2].([]byte))
 	})
 	return _c
 }
 
-func (_c *KVService_CreateTenant_Call) Return(_a0 *apistore.Tenant, _a1 error) *KVService_CreateTenant_Call {
+func (_c *KVService_CreateTenant_Call) Return(_a0 []byte, _a1 error) *KVService_CreateTenant_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *KVService_CreateTenant_Call) RunAndReturn(run func(context.Context, string, *apistore.Tenant) (*apistore.Tenant, error)) *KVService_CreateTenant_Call {
+func (_c *KVService_CreateTenant_Call) RunAndReturn(run func(context.Context, string, []byte) ([]byte, error)) *KVService_CreateTenant_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetTenant provides a mock function with given fields: ctx, tenantId
-func (_m *KVService) GetTenant(ctx context.Context, tenantId string) (*apistore.Tenant, error) {
+func (_m *KVService) GetTenant(ctx context.Context, tenantId string) ([]byte, error) {
 	ret := _m.Called(ctx, tenantId)
 
-	var r0 *apistore.Tenant
+	var r0 []byte
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*apistore.Tenant, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]byte, error)); ok {
 		return rf(ctx, tenantId)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *apistore.Tenant); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []byte); ok {
 		r0 = rf(ctx, tenantId)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*apistore.Tenant)
+			r0 = ret.Get(0).([]byte)
 		}
 	}
 
@@ -124,12 +122,66 @@ func (_c *KVService_GetTenant_Call) Run(run func(ctx context.Context, tenantId s
 	return _c
 }
 
-func (_c *KVService_GetTenant_Call) Return(_a0 *apistore.Tenant, _a1 error) *KVService_GetTenant_Call {
+func (_c *KVService_GetTenant_Call) Return(_a0 []byte, _a1 error) *KVService_GetTenant_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *KVService_GetTenant_Call) RunAndReturn(run func(context.Context, string) (*apistore.Tenant, error)) *KVService_GetTenant_Call {
+func (_c *KVService_GetTenant_Call) RunAndReturn(run func(context.Context, string) ([]byte, error)) *KVService_GetTenant_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListTenants provides a mock function with given fields: ctx
+func (_m *KVService) ListTenants(ctx context.Context) ([]string, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]string, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []string); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// KVService_ListTenants_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListTenants'
+type KVService_ListTenants_Call struct {
+	*mock.Call
+}
+
+// ListTenants is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *KVService_Expecter) ListTenants(ctx interface{}) *KVService_ListTenants_Call {
+	return &KVService_ListTenants_Call{Call: _e.mock.On("ListTenants", ctx)}
+}
+
+func (_c *KVService_ListTenants_Call) Run(run func(ctx context.Context)) *KVService_ListTenants_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *KVService_ListTenants_Call) Return(_a0 []string, _a1 error) *KVService_ListTenants_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *KVService_ListTenants_Call) RunAndReturn(run func(context.Context) ([]string, error)) *KVService_ListTenants_Call {
 	_c.Call.Return(run)
 	return _c
 }

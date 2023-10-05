@@ -12,12 +12,14 @@ import (
 	"time"
 
 	"github.com/cldmnky/krcrdr/internal/recorder"
+	"github.com/google/uuid"
 	"github.com/nats-io/nats-server/v2/server"
 
 	"github.com/cldmnky/krcrdr/internal/api"
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record"
 	apiclient "github.com/cldmnky/krcrdr/internal/api/handlers/record/client"
 	"github.com/cldmnky/krcrdr/internal/api/store"
+	"github.com/cldmnky/krcrdr/internal/api/store/providers/nats"
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -121,7 +123,7 @@ var _ = BeforeSuite(func() {
 	wh := mgr.GetWebhookServer()
 	Expect(wh).NotTo(BeNil())
 	tenant := record.Tenant{
-		ID:   "test",
+		ID:   uuid.NewString(),
 		Role: "admin",
 	}
 	jwt, err := fa.CreateJWSWithClaims([]string{"records:w", "records:r"}, tenant)
@@ -168,9 +170,9 @@ var _ = BeforeSuite(func() {
 	Expect(ns.ReadyForConnections(10 * time.Second)).To(BeTrue())
 
 	// Setup the store
-	stream, err := store.NewNatsStream(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
+	stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
 	Expect(err).NotTo(HaveOccurred())
-	kv, err := store.NewNatsKV(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
+	kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
 	Expect(err).NotTo(HaveOccurred())
 	s = store.NewStore(stream, kv)
 	// Start the API server
@@ -187,6 +189,12 @@ var _ = BeforeSuite(func() {
 		err = api.NewServer(*opts).Run(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
+
+	By("Creating the tenant")
+	s.CreateTenant(ctx, &store.Tenant{
+		Name: "test",
+		Id:   tenant.ID,
+	})
 
 	By("Applying intial resources")
 	err = k8sClient.Create(ctx, testDeployment())
@@ -219,6 +227,9 @@ var _ = Describe("recoder webhook", func() {
 		deployment := testDeployment()
 		err := k8sClient.Delete(ctx, deployment)
 		Expect(err).ShouldNot(HaveOccurred())
+		s, err := s.ListTenants(ctx)
+		Expect(err).ShouldNot(HaveOccurred())
+		Expect(s).To(HaveLen(1))
 	})
 })
 

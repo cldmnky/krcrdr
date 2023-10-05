@@ -13,12 +13,7 @@ var (
 	TennantKey = "tenants"
 )
 
-type (
-	kvOptions struct{}
-	KVOption  func(*kvOptions)
-)
-
-func NewKV(addr string, options ...kvOptions) (*NatsStore, error) {
+func NewKV(addr string) (*NatsStore, error) {
 	nc, err := nats.Connect(addr)
 	if err != nil {
 		return nil, err
@@ -38,13 +33,6 @@ func NewKV(addr string, options ...kvOptions) (*NatsStore, error) {
 		js: js,
 		kv: kv,
 	}, nil
-}
-
-// WithTenantKey sets the key for the tenant.
-func WithTenantKey(key string) KVOption {
-	return func(o *kvOptions) {
-		TennantKey = key
-	}
 }
 
 func (s *NatsStore) CreateTenant(ctx context.Context, tenantId string, tenant []byte) ([]byte, error) {
@@ -80,4 +68,8 @@ func (s *NatsStore) GetTenant(ctx context.Context, tenantId string) ([]byte, err
 		return nil, err
 	}
 	return v.Value(), nil
+}
+
+func (s *NatsStore) ListTenants(ctx context.Context) ([]string, error) {
+	return s.kv.Keys(ctx)
 }
