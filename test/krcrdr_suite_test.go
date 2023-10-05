@@ -12,10 +12,12 @@ import (
 	"time"
 
 	"github.com/cldmnky/krcrdr/internal/recorder"
+	"github.com/nats-io/nats-server/v2/server"
 
 	"github.com/cldmnky/krcrdr/internal/api"
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record"
 	apiclient "github.com/cldmnky/krcrdr/internal/api/handlers/record/client"
+	"github.com/cldmnky/krcrdr/internal/api/store"
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -46,6 +48,8 @@ var k8sClient client.Client
 var testEnv *envtest.Environment
 var ctx context.Context
 var cancel context.CancelFunc
+var ns *server.Server
+var s store.Store
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -148,13 +152,34 @@ var _ = BeforeSuite(func() {
 		}
 		return conn.Close()
 	}).Should(Succeed())
+	// start nats
+	dir, err := os.MkdirTemp("", "store")
+	Expect(err).NotTo(HaveOccurred())
+	natsOpts := &server.Options{
+		JetStream: true,
+		Debug:     true,
+		Host:      "127.0.0.1",
+		// mktmpdir
+		StoreDir: dir,
+	}
+	ns, err = server.NewServer(natsOpts)
+	Expect(err).NotTo(HaveOccurred())
+	ns.Start()
+	Expect(ns.ReadyForConnections(10 * time.Second)).To(BeTrue())
 
+	// Setup the store
+	stream, err := store.NewNatsStream(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
+	Expect(err).NotTo(HaveOccurred())
+	kv, err := store.NewNatsKV(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
+	Expect(err).NotTo(HaveOccurred())
+	s = store.NewStore(stream, kv)
 	// Start the API server
 	opts := &api.Options{
 		Addr:          "127.0.0.1:8082",
 		Authenticator: fa,
 		ApiLogger:     logf.Log.WithName("api"),
 		Env:           "dev",
+		Store:         s,
 	}
 
 	go func() {
@@ -174,6 +199,7 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
+	ns.Shutdown()
 })
 
 var _ = Describe("recoder webhook", func() {

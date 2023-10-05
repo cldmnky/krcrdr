@@ -45,7 +45,7 @@ func (v *RecorderWebhook) Handle(ctx context.Context, req admission.Request) adm
 	err = v.Recorder.SendToApiServer(ctx)
 	if err != nil {
 		webhooklog.Error(err, "failed to send request to API server")
-		return admission.Denied(fmt.Sprintf("failed to send request to API server: %v", err))
+		return admission.Allowed(fmt.Sprintf("failed to send request to API server: %v", err))
 	}
 	return admission.Allowed("recorded")
 }

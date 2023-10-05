@@ -4,13 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
+	"github.com/cldmnky/krcrdr/internal/api/store"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var logger = logf.Log.WithName("apiHandler")
 
-func Mount(r *gin.Engine, v JWSValidator) error {
-	var recordApi RecordImpl
+func Mount(r *gin.Engine, v JWSValidator, store store.Store) error {
+	recordApi := NewRecordHandler(store)
 	apiMw, err := CreateApiMiddleware(v)
 	if err != nil {
 		return err
@@ -20,7 +21,15 @@ func Mount(r *gin.Engine, v JWSValidator) error {
 	return nil
 }
 
-type RecordImpl struct{}
+func NewRecordHandler(store store.Store) *RecordImpl {
+	return &RecordImpl{
+		store: store,
+	}
+}
+
+type RecordImpl struct {
+	store store.Store
+}
 
 func (r RecordImpl) AddRecord(c *gin.Context) {
 	// get the post body
@@ -28,6 +37,21 @@ func (r RecordImpl) AddRecord(c *gin.Context) {
 	if err := c.ShouldBindJSON(&record); err != nil {
 		c.IndentedJSON(400, err)
 		logger.Error(err, "failed to bind json")
+		return
+	}
+	// get the tenant from the context
+	tenant := getTenant(c)
+	if tenant == nil {
+		c.IndentedJSON(400, gin.H{"error": "no tenant in context"})
+		return
+	}
+	storeTennant, err := r.store.GetTenant(c, tenant.ID)
+	if err != nil {
+		c.IndentedJSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := r.store.WriteStream(c, storeTennant.Name, &record); err != nil {
+		c.IndentedJSON(400, gin.H{"error": err.Error()})
 		return
 	}
 

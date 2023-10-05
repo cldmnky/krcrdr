@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	storeMocks "github.com/cldmnky/krcrdr/test/mocks/internal_/api/store"
+
 	"github.com/gin-gonic/gin"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
@@ -21,8 +23,11 @@ func TestApi(t *testing.T) {
 	fa, err := NewFakeAuthenticator()
 	require.NoError(t, err)
 
+	// mock store
+	store := storeMocks.NewStore(t)
+
 	// Mount the API on the gin engine
-	if err := Mount(r, fa); err != nil {
+	if err := Mount(r, fa, store); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 

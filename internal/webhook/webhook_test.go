@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -29,7 +30,11 @@ func TestRecorderWebhook_Handle(t *testing.T) {
 		//Client:   apiClient,
 	}
 	dryRun := true
-	apiClient.EXPECT().AddRecord(ctx, mock.Anything).Return(nil, nil).Times(3)
+	// Add a test http.reponse to the mock client
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+	}
+	apiClient.EXPECT().AddRecord(ctx, mock.Anything).Return(resp, nil).Times(3)
 
 	tests := []struct {
 		name string

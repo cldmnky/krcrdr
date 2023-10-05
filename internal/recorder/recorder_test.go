@@ -90,9 +90,9 @@ func TestFromAdmissionRequest(t *testing.T) {
 		t.Errorf("unexpected namespace: %v", record.Namespace)
 	}
 	userName := "test-user"
-	recordUserName := *record.Userinfo.Username
+	recordUserName := *record.UserInfo.Username
 	if recordUserName != userName {
-		t.Errorf("unexpected username: %v", *record.Userinfo.Username)
+		t.Errorf("unexpected username: %v", *record.UserInfo.Username)
 	}
 
 	if record.Kind.Group != "test-group" {
