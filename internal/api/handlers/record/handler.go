@@ -50,7 +50,7 @@ func (r RecordImpl) AddRecord(c *gin.Context) {
 		c.IndentedJSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	if err := r.store.WriteStream(c, storeTennant.Name, &record); err != nil {
+	if err := r.store.WriteStream(c, storeTennant.Id, &record); err != nil {
 		c.IndentedJSON(400, gin.H{"error": err.Error()})
 		return
 	}

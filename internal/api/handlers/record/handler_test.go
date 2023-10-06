@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/cldmnky/krcrdr/internal/api/store"
 	storeMocks "github.com/cldmnky/krcrdr/test/mocks/internal_/api/store"
 
 	"github.com/gin-gonic/gin"
-	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -60,11 +60,20 @@ func TestApi(t *testing.T) {
 }
 
 func TestRecordImpl_AddRecord(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
+	storeMock := storeMocks.NewStore(t)
 	// Create a new gin context and RecordImpl instance
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	recordApi := RecordImpl{}
+	// Set the tenant in the context
+	c.Set("tenant", &Tenant{ID: "test"})
+	recordApi := RecordImpl{
+		store: storeMock,
+	}
+	storeMock.Mock.On("GetTenant", c, "test").Times(1).Return(&store.Tenant{
+		Id:   "test",
+		Name: "test",
+	}, nil)
+	storeMock.Mock.On("WriteStream", c, "test", mock.AnythingOfType("*api.Record")).Times(1).Return(nil)
 
 	// add json to the request body
 	c.Request, _ = http.NewRequest("POST", "/record", bytes.NewBuffer([]byte(`

@@ -24,25 +24,25 @@ func (_m *Store) EXPECT() *Store_Expecter {
 	return &Store_Expecter{mock: &_m.Mock}
 }
 
-// CreateTenant provides a mock function with given fields: ctx, tenantId, tenant
-func (_m *Store) CreateTenant(ctx context.Context, tenantId string, tenant *apistore.Tenant) (*apistore.Tenant, error) {
-	ret := _m.Called(ctx, tenantId, tenant)
+// CreateTenant provides a mock function with given fields: ctx, tenant
+func (_m *Store) CreateTenant(ctx context.Context, tenant *apistore.Tenant) (*apistore.Tenant, error) {
+	ret := _m.Called(ctx, tenant)
 
 	var r0 *apistore.Tenant
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *apistore.Tenant) (*apistore.Tenant, error)); ok {
-		return rf(ctx, tenantId, tenant)
+	if rf, ok := ret.Get(0).(func(context.Context, *apistore.Tenant) (*apistore.Tenant, error)); ok {
+		return rf(ctx, tenant)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *apistore.Tenant) *apistore.Tenant); ok {
-		r0 = rf(ctx, tenantId, tenant)
+	if rf, ok := ret.Get(0).(func(context.Context, *apistore.Tenant) *apistore.Tenant); ok {
+		r0 = rf(ctx, tenant)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*apistore.Tenant)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *apistore.Tenant) error); ok {
-		r1 = rf(ctx, tenantId, tenant)
+	if rf, ok := ret.Get(1).(func(context.Context, *apistore.Tenant) error); ok {
+		r1 = rf(ctx, tenant)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -57,15 +57,14 @@ type Store_CreateTenant_Call struct {
 
 // CreateTenant is a helper method to define mock.On call
 //   - ctx context.Context
-//   - tenantId string
 //   - tenant *apistore.Tenant
-func (_e *Store_Expecter) CreateTenant(ctx interface{}, tenantId interface{}, tenant interface{}) *Store_CreateTenant_Call {
-	return &Store_CreateTenant_Call{Call: _e.mock.On("CreateTenant", ctx, tenantId, tenant)}
+func (_e *Store_Expecter) CreateTenant(ctx interface{}, tenant interface{}) *Store_CreateTenant_Call {
+	return &Store_CreateTenant_Call{Call: _e.mock.On("CreateTenant", ctx, tenant)}
 }
 
-func (_c *Store_CreateTenant_Call) Run(run func(ctx context.Context, tenantId string, tenant *apistore.Tenant)) *Store_CreateTenant_Call {
+func (_c *Store_CreateTenant_Call) Run(run func(ctx context.Context, tenant *apistore.Tenant)) *Store_CreateTenant_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(*apistore.Tenant))
+		run(args[0].(context.Context), args[1].(*apistore.Tenant))
 	})
 	return _c
 }
@@ -75,7 +74,7 @@ func (_c *Store_CreateTenant_Call) Return(_a0 *apistore.Tenant, _a1 error) *Stor
 	return _c
 }
 
-func (_c *Store_CreateTenant_Call) RunAndReturn(run func(context.Context, string, *apistore.Tenant) (*apistore.Tenant, error)) *Store_CreateTenant_Call {
+func (_c *Store_CreateTenant_Call) RunAndReturn(run func(context.Context, *apistore.Tenant) (*apistore.Tenant, error)) *Store_CreateTenant_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -131,6 +130,60 @@ func (_c *Store_GetTenant_Call) Return(_a0 *apistore.Tenant, _a1 error) *Store_G
 }
 
 func (_c *Store_GetTenant_Call) RunAndReturn(run func(context.Context, string) (*apistore.Tenant, error)) *Store_GetTenant_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListTenants provides a mock function with given fields: ctx
+func (_m *Store) ListTenants(ctx context.Context) ([]string, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]string, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []string); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Store_ListTenants_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListTenants'
+type Store_ListTenants_Call struct {
+	*mock.Call
+}
+
+// ListTenants is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Store_Expecter) ListTenants(ctx interface{}) *Store_ListTenants_Call {
+	return &Store_ListTenants_Call{Call: _e.mock.On("ListTenants", ctx)}
+}
+
+func (_c *Store_ListTenants_Call) Run(run func(ctx context.Context)) *Store_ListTenants_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Store_ListTenants_Call) Return(_a0 []string, _a1 error) *Store_ListTenants_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Store_ListTenants_Call) RunAndReturn(run func(context.Context) ([]string, error)) *Store_ListTenants_Call {
 	_c.Call.Return(run)
 	return _c
 }
