@@ -12,8 +12,8 @@ import (
 )
 
 // StreamService is the interface for a stream store.
-func NewStream(addr string) (*NatsStore, error) {
-	nc, err := nats.Connect(addr)
+func NewStream(url string, options ...nats.Option) (*NatsStore, error) {
+	nc, err := nats.Connect(url, options...)
 	if err != nil {
 		return nil, err
 	}

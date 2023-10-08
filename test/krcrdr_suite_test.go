@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -12,7 +13,9 @@ import (
 	"time"
 
 	"github.com/cldmnky/krcrdr/internal/recorder"
+	"github.com/cldmnky/krcrdr/internal/tracer"
 	"github.com/google/uuid"
+	"github.com/madflojo/testcerts"
 	"github.com/nats-io/nats-server/v2/server"
 
 	"github.com/cldmnky/krcrdr/internal/api"
@@ -129,14 +132,25 @@ var _ = BeforeSuite(func() {
 	jwt, err := fa.CreateJWSWithClaims([]string{"records:w", "records:r"}, tenant)
 	Expect(err).NotTo(HaveOccurred())
 	apiClient, err := apiclient.NewApiClient(
-		"http://127.0.0.1:8082",
+		"https://127.0.0.1:8443",
 		string(jwt),
+		true,
 	)
 	Expect(err).NotTo(HaveOccurred())
-	recorder := recorder.NewRecorder(apiClient)
-	wh.Register("/recorder", &webhook.Admission{Handler: &krcrdrwebhook.RecorderWebhook{Client: mgr.GetClient(), Decoder: dec, Recorder: recorder}})
-
-	//+kubebuilder:scaffold:webhook
+	// Setup tracing
+	var b bytes.Buffer
+	consoleExporter, err := tracer.NewExporter(string(tracer.ExporterTypeConsole), "", &b)
+	Expect(err).NotTo(HaveOccurred())
+	traceProvider, err := tracer.NewProvider(ctx, "version", consoleExporter)
+	recorder := recorder.NewRecorder(apiClient, traceProvider.Tracer("recorder"))
+	wh.Register("/recorder", &webhook.Admission{
+		Handler: &krcrdrwebhook.RecorderWebhook{
+			Client:   mgr.GetClient(),
+			Decoder:  dec,
+			Recorder: recorder,
+			Tracer:   traceProvider.Tracer("recorder"),
+		},
+	})
 
 	go func() {
 		defer GinkgoRecover()
@@ -154,7 +168,8 @@ var _ = BeforeSuite(func() {
 		}
 		return conn.Close()
 	}).Should(Succeed())
-	// start nats
+
+	// Start nats
 	dir, err := os.MkdirTemp("", "store")
 	Expect(err).NotTo(HaveOccurred())
 	natsOpts := &server.Options{
@@ -167,7 +182,7 @@ var _ = BeforeSuite(func() {
 	ns, err = server.NewServer(natsOpts)
 	Expect(err).NotTo(HaveOccurred())
 	ns.Start()
-	Expect(ns.ReadyForConnections(10 * time.Second)).To(BeTrue())
+	Expect(ns.ReadyForConnections(20 * time.Second)).To(BeTrue())
 
 	// Setup the store
 	stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
@@ -175,18 +190,29 @@ var _ = BeforeSuite(func() {
 	kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
 	Expect(err).NotTo(HaveOccurred())
 	s = store.NewStore(stream, kv)
+
+	// Create certs for the api server
+	cert, key, err := testcerts.GenerateCertsToTempFile("/tmp")
+	Expect(err).NotTo(HaveOccurred())
+	// get filename from path
+	cert = filepath.Base(cert)
+	key = filepath.Base(key)
+
 	// Start the API server
+
 	opts := &api.Options{
-		Addr:          "127.0.0.1:8082",
+		Host:          "127.0.0.1",
 		Authenticator: fa,
 		ApiLogger:     logf.Log.WithName("api"),
-		Env:           "dev",
 		Store:         s,
+		CertDir:       "/tmp",
+		CertName:      cert,
+		KeyName:       key,
 	}
 
 	go func() {
 		defer GinkgoRecover()
-		err = api.NewServer(*opts).Run(ctx)
+		err = api.NewServer(*opts).Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
 

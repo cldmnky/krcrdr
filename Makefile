@@ -27,6 +27,11 @@ all: build
 
 ##@ General
 
+# Set some helpers for multi arch builds
+OS?=$(shell go env GOOS)
+ARCH?=$(shell go env GOARCH)
+RELEASE_IMAGE_PLATFORMS?="linux/amd64 linux/arm64"
+
 # The help target prints out all targets with their descriptions organized
 # beneath their categories. The categories are represented by '##@' and the
 # target descriptions by '##'. The awk command is responsible for reading the
@@ -87,6 +92,10 @@ docker-build: ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	$(CONTAINER_TOOL) push ${IMG}
 
+.PHONY: build-multiarch
+build-multiarch: gox generate fmt vet ## Build manager binary for multiple platforms.
+	${GOX} -osarch=${RELEASE_IMAGE_PLATFORMS} -output="bin/release/{{.OS}}/{{.Arch}}/krcrdr" cmd/*.go
+
 # PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
 # - be able to use docker buildx. More info: https://docs.docker.com/build/buildx/
@@ -141,6 +150,7 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 MOCKERY ?= $(LOCALBIN)/mockery
 OAPI-CODEGEN ?= $(LOCALBIN)/oapi-codegen
+GOX ?= $(LOCALBIN)/gox
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.1.1
@@ -177,3 +187,8 @@ oapi-codegen: $(OAPI-CODEGEN) ## Download oapi-codegen locally if necessary.
 $(OAPI-CODEGEN): $(LOCALBIN)
 	@test -s $(LOCALBIN)/oapi-codegen || \
 	GOBIN=$(LOCALBIN) go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+
+.PHONY: gox
+gox: $(GOX) ## Download gox locally if necessary.
+$(GOX): $(LOCALBIN)
+	test -s $(GOX)/gox || GOBIN=$(LOCALBIN) go install github.com/mitchellh/gox@latest

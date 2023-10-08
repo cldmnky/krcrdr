@@ -3,10 +3,12 @@ package webhook
 import (
 	"context"
 	"net/http"
+	"os"
 	"reflect"
 	"testing"
 
 	"github.com/cldmnky/krcrdr/internal/recorder"
+	"github.com/cldmnky/krcrdr/internal/tracer"
 	mockapi "github.com/cldmnky/krcrdr/test/mocks/internal_/api/handlers/record/api"
 	"github.com/stretchr/testify/mock"
 	admissionv1 "k8s.io/api/admission/v1"
@@ -20,14 +22,24 @@ var (
 
 func TestRecorderWebhook_Handle(t *testing.T) {
 	// mock http client
+	// Setup tracing
+	consoleExporter, err := tracer.NewExporter(string(tracer.ExporterTypeConsole), "", os.Stdout)
+	if err != nil {
+		t.Errorf("failed to create console exporter: %v", err)
+	}
+	traceProvider, err := tracer.NewProvider(ctx, "version", consoleExporter)
+	if err != nil {
+		t.Errorf("failed to create trace provider: %v", err)
+	}
 	apiClient := mockapi.NewClientInterface(t)
 	scheme := apimachineryruntime.NewScheme()
 	decoder := admission.NewDecoder(scheme)
-	recorder := recorder.NewRecorder(apiClient)
+	recorder := recorder.NewRecorder(apiClient, traceProvider.Tracer("recorder"))
+
 	webhook := &RecorderWebhook{
 		Decoder:  decoder,
 		Recorder: recorder,
-		//Client:   apiClient,
+		Tracer:   traceProvider.Tracer("recorder"),
 	}
 	dryRun := true
 	// Add a test http.reponse to the mock client

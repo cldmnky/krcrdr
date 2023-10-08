@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.opentelemetry.io/otel/trace"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -20,6 +21,7 @@ type RecorderWebhook struct {
 	Client   client.Client
 	Decoder  *admission.Decoder
 	Recorder recorder.Recorder
+	Tracer   trace.Tracer
 }
 
 // Handle handles the admission request and records it.
@@ -36,16 +38,20 @@ func (v *RecorderWebhook) Handle(ctx context.Context, req admission.Request) adm
 
 	_ = v.Decoder.DecodeRaw(req.OldObject, target)
 	_ = v.Decoder.DecodeRaw(req.Object, object)
-
+	_, span := v.Tracer.Start(ctx, "record")
+	defer span.End()
 	err := v.Recorder.FromAdmissionRequest(target, object, &req.AdmissionRequest)
 	if err != nil {
 		webhooklog.Error(err, "failed to record request")
+		span.RecordError(err)
 		return admission.Allowed(fmt.Sprintf("failed to record request: %v", err))
 	}
 	err = v.Recorder.SendToApiServer(ctx)
 	if err != nil {
 		webhooklog.Error(err, "failed to send request to API server")
+		span.RecordError(err)
 		return admission.Allowed(fmt.Sprintf("failed to send request to API server: %v", err))
 	}
+	span.AddEvent("recorded")
 	return admission.Allowed("recorded")
 }

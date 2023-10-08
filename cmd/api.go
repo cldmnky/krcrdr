@@ -1,26 +1,37 @@
-package main
+package cmd
 
 import (
-	"context"
-	"sync"
+	"flag"
 
-	"github.com/cldmnky/krcrdr/internal/api"
-	"github.com/cldmnky/krcrdr/internal/api/handlers/record"
+	"github.com/cldmnky/krcrdr/cmd/commands/api"
+	"github.com/cldmnky/krcrdr/cmd/options"
+	"github.com/spf13/cobra"
+
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-func runApiServer(wg *sync.WaitGroup) {
-	defer wg.Done()
-	// Setup auth
-	fakeAuth := &record.FakeAuthenticator{}
-	options := api.Options{
-		Env:           "dev",
-		Addr:          apiAddr,
-		ApiLogger:     ctrl.Log.WithName("api"),
-		Authenticator: fakeAuth,
-	}
+var cmdLog = ctrl.Log.WithName("cmd")
 
-	server := api.NewServer(options)
-	setupLog.Info("Starting API server", "addr", options.Addr)
-	server.Run(context.Background())
+func Api() *cobra.Command {
+	o := &options.ApiOptions{}
+	cmd := &cobra.Command{
+		Use:   "api",
+		Short: "Run the api server for krcrdr",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return bindViper(cmd, args, "API")
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts := zap.Options{
+				Development: o.Debug,
+			}
+			opts.BindFlags(flag.CommandLine)
+			flag.Parse()
+
+			ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+			return api.Complete(cmd, args, o)
+		},
+	}
+	o.AddFlags(cmd)
+	return cmd
 }

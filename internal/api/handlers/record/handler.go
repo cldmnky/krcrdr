@@ -2,6 +2,7 @@ package record
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 	"github.com/cldmnky/krcrdr/internal/api/store"
@@ -28,7 +29,8 @@ func NewRecordHandler(store store.Store) *RecordImpl {
 }
 
 type RecordImpl struct {
-	store store.Store
+	store  store.Store
+	tracer trace.Tracer
 }
 
 func (r RecordImpl) AddRecord(c *gin.Context) {

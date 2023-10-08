@@ -25,11 +25,22 @@ import (
 
 // ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	ApiSpec ApiSpec `json:"api"`
+}
 
-	// Foo is an example field of Config. Edit config_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+// TenentSecretSpec is a secret reference for an api tenant
+type TenantSecretSpec struct {
+	// Name is the name of the secret, this is required
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+}
+
+// ApiSpec defines the api configuration
+type ApiSpec struct {
+	// TenantSecret is a reference to the secret containing the api tenant
+	// +kubebuilder:validation:Required
+	Secret      *TenantSecretSpec `json:"secret"`
+	ApiEndpoint string            `json:"apiEndpoint"`
 }
 
 // ConfigStatus defines the observed state of Config
