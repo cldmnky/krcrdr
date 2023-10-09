@@ -15,7 +15,7 @@ func Webhook() *cobra.Command {
 			return bindViper(cmd, args, "WEBHOOK")
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return webhook.Complete(cmd, args, o)
+			return webhook.Complete(cmd, args, ro, o)
 		},
 	}
 	o.AddFlags(cmd)

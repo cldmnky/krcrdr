@@ -7,8 +7,8 @@ import (
 	recorderv1beta1 "github.com/cldmnky/krcrdr/api/v1beta1"
 	apiclient "github.com/cldmnky/krcrdr/internal/api/handlers/record/client"
 	"github.com/cldmnky/krcrdr/internal/recorder"
+	"github.com/cldmnky/krcrdr/internal/tracer"
 	"github.com/cldmnky/krcrdr/internal/webhook"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/cldmnky/krcrdr/cmd/options"
 	"github.com/spf13/cobra"
@@ -40,7 +40,16 @@ func init() {
 // It generates certs if requested and registers a recorder webhook.
 // It also sets up health and readiness checks.
 // Returns an error if there was a problem starting the server.
-func Complete(cmd *cobra.Command, args []string, o *options.WebhookOptions) error {
+func Complete(cmd *cobra.Command, args []string, ro *options.RootOptions, o *options.WebhookOptions) error {
+	// Setup tracing
+	exporter, err := tracer.NewExporter(ro.OTLPExporter, ro.OTLPAddr, cmd.ErrOrStderr())
+	if err != nil {
+		return err
+	}
+	traceProvider, err := tracer.NewProvider(cmd.Context(), cmd.Version, exporter)
+	if err != nil {
+		return err
+	}
 	zapOpts := zap.Options{
 		Development: o.Debug,
 	}
@@ -73,8 +82,6 @@ func Complete(cmd *cobra.Command, args []string, o *options.WebhookOptions) erro
 		Scheme:                 scheme,
 		Metrics:                metricsserver.Options{BindAddress: o.MetricsAddr},
 		HealthProbeBindAddress: o.ProbeAddr,
-		LeaderElection:         o.EnableLeaderElection,
-		LeaderElectionID:       "webhook.krcrdr.blahonga.me",
 		WebhookServer: k8swebhook.NewServer(
 			k8swebhook.Options{
 				CertDir:  o.CertDir,
@@ -94,8 +101,6 @@ func Complete(cmd *cobra.Command, args []string, o *options.WebhookOptions) erro
 		webhookLog.Error(err, "unable to create api client")
 		return err
 	}
-	// noop tracer
-	traceProvider := trace.NewNoopTracerProvider()
 
 	r := recorder.NewRecorder(apiClient, traceProvider.Tracer("recorder"))
 	wh.Register("/recorder", &k8swebhook.Admission{

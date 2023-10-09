@@ -55,6 +55,7 @@ var ctx context.Context
 var cancel context.CancelFunc
 var ns *server.Server
 var s store.Store
+var traceBuffer bytes.Buffer
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -138,8 +139,7 @@ var _ = BeforeSuite(func() {
 	)
 	Expect(err).NotTo(HaveOccurred())
 	// Setup tracing
-	var b bytes.Buffer
-	consoleExporter, err := tracer.NewExporter(string(tracer.ExporterTypeConsole), "", &b)
+	consoleExporter, err := tracer.NewExporter(string(tracer.ExporterTypeConsole), "", &traceBuffer)
 	Expect(err).NotTo(HaveOccurred())
 	traceProvider, err := tracer.NewProvider(ctx, "version", consoleExporter)
 	recorder := recorder.NewRecorder(apiClient, traceProvider.Tracer("recorder"))
@@ -208,6 +208,7 @@ var _ = BeforeSuite(func() {
 		CertDir:       "/tmp",
 		CertName:      cert,
 		KeyName:       key,
+		Tracer:        traceProvider.Tracer("api"),
 	}
 
 	go func() {

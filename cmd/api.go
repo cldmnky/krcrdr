@@ -29,7 +29,9 @@ func Api() *cobra.Command {
 			flag.Parse()
 
 			ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-			return api.Complete(cmd, args, o)
+			// print root options
+			cmdLog.Info("root options", "options", ro)
+			return api.Complete(cmd, args, ro, o)
 		},
 	}
 	o.AddFlags(cmd)

@@ -8,6 +8,7 @@ import (
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record"
 	"github.com/cldmnky/krcrdr/internal/api/store"
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -44,6 +45,8 @@ type Options struct {
 	Authenticator record.JWSValidator
 	// Store is the store used to persist records
 	Store store.Store
+	// Tracer is the tracer used for tracing
+	Tracer trace.Tracer
 	// Debug enables debug logging
 	Debug bool
 }

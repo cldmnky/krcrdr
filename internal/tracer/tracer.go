@@ -134,7 +134,7 @@ func NewProvider(ctx context.Context, version string, exporter sdktrace.SpanExpo
 func resources(ctx context.Context, version string) (*resource.Resource, error) {
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
-			semconv.ServiceNameKey.String("parca"),
+			semconv.ServiceNameKey.String("krcrdr"),
 			semconv.ServiceVersionKey.String(version),
 		),
 		resource.WithFromEnv(),   // pull attributes from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME environment variables
