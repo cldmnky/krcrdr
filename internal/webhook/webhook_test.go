@@ -7,10 +7,11 @@ import (
 	"reflect"
 	"testing"
 
+	apiMocks "github.com/cldmnky/krcrdr/test/mocks/internal_/api/handlers/record/api"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/cldmnky/krcrdr/internal/recorder"
 	"github.com/cldmnky/krcrdr/internal/tracer"
-	mockapi "github.com/cldmnky/krcrdr/test/mocks/internal_/api/handlers/record/api"
-	"github.com/stretchr/testify/mock"
 	admissionv1 "k8s.io/api/admission/v1"
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -31,7 +32,7 @@ func TestRecorderWebhook_Handle(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to create trace provider: %v", err)
 	}
-	apiClient := mockapi.NewClientInterface(t)
+	apiClient := apiMocks.NewClientInterface(t)
 	scheme := apimachineryruntime.NewScheme()
 	decoder := admission.NewDecoder(scheme)
 	recorder := recorder.NewRecorder(apiClient, traceProvider.Tracer("recorder"))
@@ -46,7 +47,7 @@ func TestRecorderWebhook_Handle(t *testing.T) {
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
 	}
-	apiClient.EXPECT().AddRecord(ctx, mock.Anything).Return(resp, nil).Times(3)
+	apiClient.EXPECT().AddRecord(mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("api.Record")).Return(resp, nil).Times(3)
 
 	tests := []struct {
 		name string
