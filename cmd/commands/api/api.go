@@ -13,6 +13,7 @@ import (
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record"
 	"github.com/cldmnky/krcrdr/internal/api/store"
 	"github.com/cldmnky/krcrdr/internal/api/store/providers/nats"
+	"github.com/cldmnky/krcrdr/internal/tracer"
 	"github.com/madflojo/testcerts"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/spf13/cobra"
@@ -26,7 +27,16 @@ import (
 
 var apiLog = ctrl.Log.WithName("api")
 
-func Complete(cmd *cobra.Command, args []string, o *options.ApiOptions) error {
+func Complete(cmd *cobra.Command, args []string, ro *options.RootOptions, o *options.ApiOptions) error {
+	// Setup tracing
+	exporter, err := tracer.NewExporter(ro.OTLPExporter, ro.OTLPAddr, cmd.ErrOrStderr())
+	if err != nil {
+		return err
+	}
+	traceProvider, err := tracer.NewProvider(cmd.Context(), cmd.Version, exporter)
+	if err != nil {
+		return err
+	}
 	// create a comma separated list of nats urls
 	natsUrls := ""
 	for _, url := range o.NatsUrl {
@@ -126,6 +136,7 @@ func Complete(cmd *cobra.Command, args []string, o *options.ApiOptions) error {
 		CertDir:       o.CertDir,
 		CertName:      o.CertName,
 		KeyName:       o.KeyName,
+		Tracer:        traceProvider.Tracer("api"),
 		Debug:         o.Debug,
 	}
 	if err := api.NewServer(*opts).Start(ctrl.SetupSignalHandler()); err != nil {

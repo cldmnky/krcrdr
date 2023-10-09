@@ -13,8 +13,6 @@ type WebhookOptions struct {
 	MetricsAddr string
 	// ProbeAddr is the address the probe endpoint binds to.
 	ProbeAddr string
-	// EnableLeaderElection enables leader election for controller manager.
-	EnableLeaderElection bool
 	// Debug enables debug logging.
 	Debug bool
 	// ApiRemoteAddr is the address of the API endpoint.
@@ -36,7 +34,6 @@ func (o *WebhookOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.CertDir, "cert-dir", "/tmp/k8s-webhook-server/serving-certs", "The directory containing the TLS certs.")
 	cmd.Flags().StringVar(&o.MetricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	cmd.Flags().StringVar(&o.ProbeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	cmd.Flags().BoolVar(&o.EnableLeaderElection, "leader-elect", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	cmd.Flags().StringVar(&o.ApiRemoteAddr, "api-remote-address", "http://localhost:8082", "The address of the API endpoint. Env var: WEBHOOK_API_REMOTE_ADDRESS")
 	cmd.Flags().StringVar(&o.ApiToken, "api-token", "", "The token used to authenticate to the API. Env var: WEBHOOK_API_TOKEN")
 	cmd.Flags().BoolVar(&o.GenerateCerts, "generate-certs", false, "Generate the TLS certs.")

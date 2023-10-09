@@ -4,18 +4,26 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cldmnky/krcrdr/cmd/options"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
+var (
+	ro      = &options.RootOptions{}
+	Version = "1.0.0"
+)
+
 func New() *cobra.Command {
+	ro.Version = Version
 	cmd := &cobra.Command{
 		Use:               "krcrdr",
 		Short:             "krcrdr is a Kubernetes controller that records events to a database",
 		Long:              `krcrdr is a Kubernetes controller that records events to a database`,
 		DisableAutoGenTag: true,
 	}
+	ro.AddFlags(cmd)
 	cmd.AddCommand(Controller())
 	cmd.AddCommand(Webhook())
 	cmd.AddCommand(Api())

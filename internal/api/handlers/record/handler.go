@@ -6,13 +6,15 @@ import (
 
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 	"github.com/cldmnky/krcrdr/internal/api/store"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var logger = logf.Log.WithName("apiHandler")
 
-func Mount(r *gin.Engine, v JWSValidator, store store.Store) error {
-	recordApi := NewRecordHandler(store)
+func Mount(r *gin.Engine, v JWSValidator, store store.Store, tracer trace.Tracer) error {
+	r.Use(otelgin.Middleware("api"))
+	recordApi := NewRecordHandler(store, tracer)
 	apiMw, err := CreateApiMiddleware(v)
 	if err != nil {
 		return err
@@ -22,9 +24,10 @@ func Mount(r *gin.Engine, v JWSValidator, store store.Store) error {
 	return nil
 }
 
-func NewRecordHandler(store store.Store) *RecordImpl {
+func NewRecordHandler(store store.Store, tracer trace.Tracer) *RecordImpl {
 	return &RecordImpl{
-		store: store,
+		store:  store,
+		tracer: tracer,
 	}
 }
 
@@ -34,6 +37,8 @@ type RecordImpl struct {
 }
 
 func (r RecordImpl) AddRecord(c *gin.Context) {
+	_, span := r.tracer.Start(c.Request.Context(), "AddRecord")
+	defer span.End()
 	// get the post body
 	var record api.Record
 	if err := c.ShouldBindJSON(&record); err != nil {

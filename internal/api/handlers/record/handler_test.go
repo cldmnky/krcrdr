@@ -3,21 +3,40 @@ package record
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/cldmnky/krcrdr/internal/api/store"
+	"github.com/cldmnky/krcrdr/internal/tracer"
 	storeMocks "github.com/cldmnky/krcrdr/test/mocks/internal_/api/store"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	ctx = context.Background()
+)
+
 func TestApi(t *testing.T) {
+
 	// Create a new gin engine
 	r := gin.New()
+
+	// Setup tracing
+	consoleExporter, err := tracer.NewExporter(string(tracer.ExporterTypeConsole), "", os.Stdout)
+	if err != nil {
+		t.Errorf("failed to create console exporter: %v", err)
+	}
+	traceProvider, err := tracer.NewProvider(ctx, "version", consoleExporter)
+	if err != nil {
+		t.Errorf("failed to create trace provider: %v", err)
+	}
 
 	// setup the validator
 	fa, err := NewFakeAuthenticator()
@@ -27,7 +46,7 @@ func TestApi(t *testing.T) {
 	store := storeMocks.NewStore(t)
 
 	// Mount the API on the gin engine
-	if err := Mount(r, fa, store); err != nil {
+	if err := Mount(r, fa, store, traceProvider.Tracer("api")); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -67,7 +86,8 @@ func TestRecordImpl_AddRecord(t *testing.T) {
 	// Set the tenant in the context
 	c.Set("tenant", &Tenant{ID: "test"})
 	recordApi := RecordImpl{
-		store: storeMock,
+		store:  storeMock,
+		tracer: trace.NewNoopTracerProvider().Tracer("test"),
 	}
 	storeMock.Mock.On("GetTenant", c, "test").Times(1).Return(&store.Tenant{
 		Id:   "test",
