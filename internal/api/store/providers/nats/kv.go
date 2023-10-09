@@ -13,8 +13,8 @@ var (
 	TennantKey = "tenants"
 )
 
-func NewKV(addr string) (*NatsStore, error) {
-	nc, err := nats.Connect(addr)
+func NewKV(url string, options ...nats.Option) (*NatsStore, error) {
+	nc, err := nats.Connect(url, options...)
 	if err != nil {
 		return nil, err
 	}

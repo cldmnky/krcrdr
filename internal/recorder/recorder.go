@@ -10,6 +10,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"go.opentelemetry.io/otel/trace"
 	jsonpatch6902 "gomodules.xyz/jsonpatch/v2"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -27,18 +28,22 @@ type Recorder interface {
 type recorder struct {
 	record *api.Record
 	client api.ClientInterface
+	tracer trace.Tracer
 }
 
-func NewRecorder(client api.ClientInterface) Recorder {
+func NewRecorder(client api.ClientInterface, tracer trace.Tracer) Recorder {
 	return &recorder{
 		client: client,
+		tracer: tracer,
 	}
 }
 
 func (r *recorder) FromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) error {
-
+	_, span := r.tracer.Start(context.Background(), "record")
+	defer span.End()
 	record, err := fromAdmissionRequest(oldObject, newObject, req)
 	if err != nil {
+		span.RecordError(err)
 		return err
 	}
 	r.record = record
@@ -47,19 +52,26 @@ func (r *recorder) FromAdmissionRequest(oldObject, newObject *unstructured.Unstr
 
 // SendToApiServer sends the record to the API server
 func (r *recorder) SendToApiServer(ctx context.Context) error {
+	ctx, span := r.tracer.Start(ctx, "send")
+	defer span.End()
 	if r.record == nil {
+		span.RecordError(fmt.Errorf("no record to send"))
 		return fmt.Errorf("no record to send")
 	}
 	resp, err := r.client.AddRecord(ctx, *r.record)
 	if err != nil {
+		span.RecordError(err)
 		return err
 	}
 	if resp == nil {
+		span.RecordError(fmt.Errorf("no response from API server"))
 		return fmt.Errorf("no response from API server")
 	}
 	if resp.StatusCode > 399 {
+		span.RecordError(fmt.Errorf("error sending record: %s", resp.Status))
 		return fmt.Errorf("error sending record: %s", resp.Status)
 	}
+	span.AddEvent("sent")
 	return nil
 }
 

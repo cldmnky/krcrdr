@@ -34,10 +34,27 @@ spec:
           spec:
             description: ConfigSpec defines the desired state of Config
             properties:
-              foo:
-                description: Foo is an example field of Config. Edit config_types.go
-                  to remove/update
-                type: string
+              api:
+                description: ApiSpec defines the api configuration
+                properties:
+                  apiEndpoint:
+                    type: string
+                  secret:
+                    description: TenantSecret is a reference to the secret containing
+                      the api tenant
+                    properties:
+                      name:
+                        description: Name is the name of the secret, this is required
+                        type: string
+                    required:
+                    - name
+                    type: object
+                required:
+                - apiEndpoint
+                - secret
+                type: object
+            required:
+            - api
             type: object
           status:
             description: ConfigStatus defines the observed state of Config
