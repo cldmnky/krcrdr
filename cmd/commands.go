@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"flag"
 	"fmt"
 	"strings"
 
@@ -9,6 +10,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
@@ -23,22 +27,37 @@ func New() *cobra.Command {
 		Short:             "krcrdr is a Kubernetes controller that records events to a database",
 		Long:              `krcrdr is a Kubernetes controller that records events to a database`,
 		DisableAutoGenTag: true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			traceExporter, err := tracer.NewExporter(ro.OTLPExporter, ro.OTLPAddr, cmd.OutOrStdout())
+			cobra.CheckErr(err)
+			traceProvider, err := tracer.NewProvider(cmd.Context(), "version", traceExporter)
+			cobra.CheckErr(err)
+			ro.Tracer = traceProvider.Tracer("krcrdr")
+			go func() {
+				err = tracer.StartTracer(cmd.Context(), traceExporter)
+				cobra.CheckErr(err)
+			}()
+			return bindViper(cmd, args, "KRCRDR")
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			// print help
+			cmd.Help()
+		},
 	}
 	ro.AddFlags(cmd)
 	cmd.AddCommand(Controller())
 	cmd.AddCommand(Webhook())
 	cmd.AddCommand(Api())
 
-	// Setuo tracing
-	traceExporter, err := tracer.NewExporter(ro.OTLPExporter, ro.OTLPAddr, cmd.OutOrStdout())
-	cobra.CheckErr(err)
-	traceProvider, err := tracer.NewProvider(cmd.Context(), "version", traceExporter)
-	cobra.CheckErr(err)
-	ro.Tracer = traceProvider.Tracer("krcrdr")
-	go func() {
-		err = tracer.StartTracer(cmd.Context(), traceExporter)
-		cobra.CheckErr(err)
-	}()
+	opts := zap.Options{
+		Development: ro.Debug,
+	}
+	// Add global flags
+	opts.BindFlags(flag.CommandLine)
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	flag.Parse()
+
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	return cmd
 }
 

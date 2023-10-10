@@ -55,12 +55,16 @@ type Exporter interface {
 func NewExporter(exType, otlpAddress string, writer io.Writer) (Exporter, error) {
 	switch strings.ToLower(exType) {
 	case string(ExporterTypeOTLP):
+		tracerlog.Info("creating otlp exporter", "address", otlpAddress)
 		return NewOTELExporter(otlpAddress)
 	case string(ExporterTypeConsole):
+		tracerlog.Info("creating console exporter")
 		return NewConsoleExporter(writer)
 	case string(ExporterTypeHTTP):
+		tracerlog.Info("creating http exporter", "address", otlpAddress)
 		return NewHTTPExporter(otlpAddress)
 	case string(ExporterTypeNoop):
+		tracerlog.Info("creating noop exporter")
 		return NewNoopExporter(), nil
 	default:
 		return NewNoopExporter(), fmt.Errorf("unknown exporter type: %s", exType)
@@ -192,7 +196,6 @@ func StartTracer(ctx context.Context, exporter Exporter) error {
 			tracerlog.Error(err, "failed to shutdown exporter")
 		}
 	})
-	tracerlog.Info("starting tracer")
 	if err := gr.Run(); err != nil {
 		return fmt.Errorf("tracer failed: %w", err)
 	}
