@@ -7,7 +7,6 @@ import (
 	recorderv1beta1 "github.com/cldmnky/krcrdr/api/v1beta1"
 	apiclient "github.com/cldmnky/krcrdr/internal/api/handlers/record/client"
 	"github.com/cldmnky/krcrdr/internal/recorder"
-	"github.com/cldmnky/krcrdr/internal/tracer"
 	"github.com/cldmnky/krcrdr/internal/webhook"
 
 	"github.com/cldmnky/krcrdr/cmd/options"
@@ -41,15 +40,6 @@ func init() {
 // It also sets up health and readiness checks.
 // Returns an error if there was a problem starting the server.
 func Complete(cmd *cobra.Command, args []string, ro *options.RootOptions, o *options.WebhookOptions) error {
-	// Setup tracing
-	exporter, err := tracer.NewExporter(ro.OTLPExporter, ro.OTLPAddr, cmd.ErrOrStderr())
-	if err != nil {
-		return err
-	}
-	traceProvider, err := tracer.NewProvider(cmd.Context(), cmd.Version, exporter)
-	if err != nil {
-		return err
-	}
 	zapOpts := zap.Options{
 		Development: o.Debug,
 	}
@@ -102,10 +92,13 @@ func Complete(cmd *cobra.Command, args []string, ro *options.RootOptions, o *opt
 		return err
 	}
 
-	r := recorder.NewRecorder(apiClient, traceProvider.Tracer("recorder"))
+	r := recorder.NewRecorder(apiClient, ro.Tracer)
 	wh.Register("/recorder", &k8swebhook.Admission{
 		Handler: &webhook.RecorderWebhook{
-			Client: mgr.GetClient(), Decoder: dec, Recorder: r,
+			Client:   mgr.GetClient(),
+			Decoder:  dec,
+			Recorder: r,
+			Tracer:   ro.Tracer,
 		},
 	})
 

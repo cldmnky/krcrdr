@@ -38,7 +38,7 @@ func (v *RecorderWebhook) Handle(ctx context.Context, req admission.Request) adm
 
 	_ = v.Decoder.DecodeRaw(req.OldObject, target)
 	_ = v.Decoder.DecodeRaw(req.Object, object)
-	_, span := v.Tracer.Start(ctx, "record")
+	ctx, span := v.Tracer.Start(ctx, "record")
 	defer span.End()
 	err := v.Recorder.FromAdmissionRequest(target, object, &req.AdmissionRequest)
 	if err != nil {

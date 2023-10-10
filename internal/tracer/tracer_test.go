@@ -15,8 +15,8 @@ func TestNewExporter(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			name:        "OTEL exporter",
-			exType:      ExporterTypeOTEL,
+			name:        "OTLP exporter",
+			exType:      ExporterTypeOTLP,
 			otlpAddress: "localhost:4317",
 			wantErr:     false,
 		},
@@ -58,7 +58,7 @@ func TestNewProvider(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "OTEL exporter",
+			name:     "OTLP exporter",
 			exporter: &otlptrace.Exporter{},
 			wantErr:  false,
 		},
