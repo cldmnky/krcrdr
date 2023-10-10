@@ -15,6 +15,7 @@ import (
 var log = ctrl.Log.WithName("main")
 
 func main() {
+	// Set up a Ctrl-C context.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 	if err := cmd.New().ExecuteContext(ctx); err != nil {

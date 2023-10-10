@@ -56,17 +56,17 @@ var cancel context.CancelFunc
 var ns *server.Server
 var s store.Store
 var traceBuffer bytes.Buffer
+var traceExporter tracer.Exporter
 
-func TestAPIs(t *testing.T) {
+func TestKrcrdr(t *testing.T) {
 	RegisterFailHandler(Fail)
-
 	RunSpecs(t, "krcrdr Suite")
 }
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	ctx, cancel = context.WithCancel(context.TODO())
+	ctx, cancel = context.WithCancel(context.Background())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -139,9 +139,17 @@ var _ = BeforeSuite(func() {
 	)
 	Expect(err).NotTo(HaveOccurred())
 	// Setup tracing
-	consoleExporter, err := tracer.NewExporter(string(tracer.ExporterTypeConsole), "", &traceBuffer)
+	traceExporter, err = tracer.NewExporter("noop", "127.0.0.1:4317", &traceBuffer)
 	Expect(err).NotTo(HaveOccurred())
-	traceProvider, err := tracer.NewProvider(ctx, "version", consoleExporter)
+	traceProvider, err := tracer.NewProvider(ctx, "version", traceExporter)
+	Expect(err).NotTo(HaveOccurred())
+	go func() {
+		defer GinkgoRecover()
+		err = tracer.StartTracer(ctx, traceExporter)
+		Expect(err).NotTo(HaveOccurred())
+	}()
+
+	// Setup recorder
 	recorder := recorder.NewRecorder(apiClient, traceProvider.Tracer("recorder"))
 	wh.Register("/recorder", &webhook.Admission{
 		Handler: &krcrdrwebhook.RecorderWebhook{
@@ -176,8 +184,7 @@ var _ = BeforeSuite(func() {
 		JetStream: true,
 		Debug:     true,
 		Host:      "127.0.0.1",
-		// mktmpdir
-		StoreDir: dir,
+		StoreDir:  dir,
 	}
 	ns, err = server.NewServer(natsOpts)
 	Expect(err).NotTo(HaveOccurred())
@@ -230,11 +237,15 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	time.Sleep(10 * time.Second)
 	cancel()
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 	ns.Shutdown()
+	err = traceExporter.Shutdown(ctx)
+	Expect(err).ToNot(HaveOccurred())
+
 })
 
 var _ = Describe("recoder webhook", func() {
@@ -248,6 +259,17 @@ var _ = Describe("recoder webhook", func() {
 
 		err := k8sClient.Update(ctx, updatedDeployment)
 		Expect(err).ShouldNot(HaveOccurred())
+		// loop 100 changes
+		for i := 0; i < 10; i++ {
+			updatedDeployment.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("updated%d", i)
+			updatedDeployment.Spec.Template.Spec.Containers[0].Ports = nil
+			updatedDeployment.Spec.Paused = true
+			updatedDeployment.ObjectMeta.Labels["addedLabel"] = "test"
+			updatedDeployment.ObjectMeta.Labels["changed"] = fmt.Sprintf("yes%d", i)
+
+			err := k8sClient.Update(ctx, updatedDeployment)
+			Expect(err).ShouldNot(HaveOccurred())
+		}
 
 	})
 	It("should handle delete", func() {

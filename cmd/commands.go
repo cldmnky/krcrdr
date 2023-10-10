@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/cldmnky/krcrdr/cmd/options"
+	"github.com/cldmnky/krcrdr/internal/tracer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -27,6 +28,17 @@ func New() *cobra.Command {
 	cmd.AddCommand(Controller())
 	cmd.AddCommand(Webhook())
 	cmd.AddCommand(Api())
+
+	// Setuo tracing
+	traceExporter, err := tracer.NewExporter(ro.OTLPExporter, ro.OTLPAddr, cmd.OutOrStdout())
+	cobra.CheckErr(err)
+	traceProvider, err := tracer.NewProvider(cmd.Context(), "version", traceExporter)
+	cobra.CheckErr(err)
+	ro.Tracer = traceProvider.Tracer("krcrdr")
+	go func() {
+		err = tracer.StartTracer(cmd.Context(), traceExporter)
+		cobra.CheckErr(err)
+	}()
 	return cmd
 }
 

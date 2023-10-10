@@ -5,15 +5,25 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
+	"github.com/oklog/run"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+var (
+	tracerlog = logf.Log.WithName("tracer")
 )
 
 type (
@@ -22,7 +32,8 @@ type (
 )
 
 const (
-	ExporterTypeOTEL    ExporterType = "otel"
+	ExporterTypeOTLP    ExporterType = "otlp"
+	ExporterTypeHTTP    ExporterType = "http"
 	ExporterTypeConsole ExporterType = "console"
 	ExporterTypeNoop    ExporterType = "noop"
 
@@ -43,10 +54,12 @@ type Exporter interface {
 // If the exporter type is unknown, a new NoopExporter is created and an error is returned.
 func NewExporter(exType, otlpAddress string, writer io.Writer) (Exporter, error) {
 	switch strings.ToLower(exType) {
-	case string(ExporterTypeOTEL):
+	case string(ExporterTypeOTLP):
 		return NewOTELExporter(otlpAddress)
 	case string(ExporterTypeConsole):
 		return NewConsoleExporter(writer)
+	case string(ExporterTypeHTTP):
+		return NewHTTPExporter(otlpAddress)
 	case string(ExporterTypeNoop):
 		return NewNoopExporter(), nil
 	default:
@@ -88,6 +101,14 @@ func NewOTELExporter(otlpAddress string) (Exporter, error) {
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(otlpAddress),
 	), nil
+}
+
+// NewHTTPExporter returns a HTTP exporter.
+func NewHTTPExporter(otlpAddress string) (Exporter, error) {
+	return otlptrace.NewUnstarted(otlptracehttp.NewClient(
+		otlptracehttp.WithInsecure(),
+		otlptracehttp.WithEndpoint(otlpAddress),
+	)), nil
 }
 
 func NewConsoleExporter(w io.Writer) (Exporter, error) {
@@ -147,4 +168,35 @@ func resources(ctx context.Context, version string) (*resource.Resource, error) 
 		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 	return res, nil
+}
+
+func StartTracer(ctx context.Context, exporter Exporter) error {
+	tracerlog.Info("starting tracer")
+	var gr run.Group
+	ctx, cancel := context.WithCancel(ctx)
+	gr.Add(func() error {
+		if err := exporter.Start(ctx); err != nil {
+			return fmt.Errorf("failed to start exporter: %w", err)
+		}
+		<-ctx.Done()
+		tracerlog.Info("stopping tracer")
+		return nil
+	}, func(err error) {
+		tracerlog.Info("shutting down tracer")
+		cancel()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		// send all remaining spans
+		if err := exporter.Shutdown(ctx); err != nil {
+			tracerlog.Error(err, "failed to shutdown exporter")
+		}
+	})
+	tracerlog.Info("starting tracer")
+	if err := gr.Run(); err != nil {
+		return fmt.Errorf("tracer failed: %w", err)
+	}
+	tracerlog.Info("tracer stopped")
+	return nil
+
 }

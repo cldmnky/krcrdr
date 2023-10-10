@@ -1,6 +1,9 @@
 package options
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+	"go.opentelemetry.io/otel/trace"
+)
 
 type RootOptions struct {
 	// Version is the version of the application.
@@ -11,6 +14,8 @@ type RootOptions struct {
 	OTLPExporter string
 	// Debug enables debug logging.
 	Debug bool
+	// Tracer
+	Tracer trace.Tracer
 }
 
 var _ Interface = (*RootOptions)(nil)

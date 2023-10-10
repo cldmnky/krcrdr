@@ -27,10 +27,7 @@ func Api() *cobra.Command {
 			}
 			opts.BindFlags(flag.CommandLine)
 			flag.Parse()
-
 			ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-			// print root options
-			cmdLog.Info("root options", "options", ro)
 			return api.Complete(cmd, args, ro, o)
 		},
 	}

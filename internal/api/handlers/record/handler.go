@@ -37,11 +37,12 @@ type RecordImpl struct {
 }
 
 func (r RecordImpl) AddRecord(c *gin.Context) {
-	_, span := r.tracer.Start(c.Request.Context(), "AddRecord")
+	_, span := r.tracer.Start(c, "AddRecord")
 	defer span.End()
 	// get the post body
 	var record api.Record
 	if err := c.ShouldBindJSON(&record); err != nil {
+		span.RecordError(err)
 		c.IndentedJSON(400, err)
 		logger.Error(err, "failed to bind json")
 		return
