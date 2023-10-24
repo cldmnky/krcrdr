@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 )
 

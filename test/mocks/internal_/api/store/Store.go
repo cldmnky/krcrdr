@@ -188,13 +188,13 @@ func (_c *Store_ListTenants_Call) RunAndReturn(run func(context.Context) ([]stri
 	return _c
 }
 
-// WriteStream provides a mock function with given fields: ctx, tenantId, record
-func (_m *Store) WriteStream(ctx context.Context, tenantId string, record *api.Record) error {
-	ret := _m.Called(ctx, tenantId, record)
+// StartIndexer provides a mock function with given fields: ctx
+func (_m *Store) StartIndexer(ctx context.Context) error {
+	ret := _m.Called(ctx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *api.Record) error); ok {
-		r0 = rf(ctx, tenantId, record)
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -202,32 +202,84 @@ func (_m *Store) WriteStream(ctx context.Context, tenantId string, record *api.R
 	return r0
 }
 
-// Store_WriteStream_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WriteStream'
-type Store_WriteStream_Call struct {
+// Store_StartIndexer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StartIndexer'
+type Store_StartIndexer_Call struct {
 	*mock.Call
 }
 
-// WriteStream is a helper method to define mock.On call
+// StartIndexer is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Store_Expecter) StartIndexer(ctx interface{}) *Store_StartIndexer_Call {
+	return &Store_StartIndexer_Call{Call: _e.mock.On("StartIndexer", ctx)}
+}
+
+func (_c *Store_StartIndexer_Call) Run(run func(ctx context.Context)) *Store_StartIndexer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Store_StartIndexer_Call) Return(_a0 error) *Store_StartIndexer_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Store_StartIndexer_Call) RunAndReturn(run func(context.Context) error) *Store_StartIndexer_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Write provides a mock function with given fields: ctx, tenantId, record
+func (_m *Store) Write(ctx context.Context, tenantId string, record *api.Record) (uint64, error) {
+	ret := _m.Called(ctx, tenantId, record)
+
+	var r0 uint64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *api.Record) (uint64, error)); ok {
+		return rf(ctx, tenantId, record)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *api.Record) uint64); ok {
+		r0 = rf(ctx, tenantId, record)
+	} else {
+		r0 = ret.Get(0).(uint64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, *api.Record) error); ok {
+		r1 = rf(ctx, tenantId, record)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Store_Write_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Write'
+type Store_Write_Call struct {
+	*mock.Call
+}
+
+// Write is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tenantId string
 //   - record *api.Record
-func (_e *Store_Expecter) WriteStream(ctx interface{}, tenantId interface{}, record interface{}) *Store_WriteStream_Call {
-	return &Store_WriteStream_Call{Call: _e.mock.On("WriteStream", ctx, tenantId, record)}
+func (_e *Store_Expecter) Write(ctx interface{}, tenantId interface{}, record interface{}) *Store_Write_Call {
+	return &Store_Write_Call{Call: _e.mock.On("Write", ctx, tenantId, record)}
 }
 
-func (_c *Store_WriteStream_Call) Run(run func(ctx context.Context, tenantId string, record *api.Record)) *Store_WriteStream_Call {
+func (_c *Store_Write_Call) Run(run func(ctx context.Context, tenantId string, record *api.Record)) *Store_Write_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*api.Record))
 	})
 	return _c
 }
 
-func (_c *Store_WriteStream_Call) Return(_a0 error) *Store_WriteStream_Call {
-	_c.Call.Return(_a0)
+func (_c *Store_Write_Call) Return(_a0 uint64, _a1 error) *Store_Write_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Store_WriteStream_Call) RunAndReturn(run func(context.Context, string, *api.Record) error) *Store_WriteStream_Call {
+func (_c *Store_Write_Call) RunAndReturn(run func(context.Context, string, *api.Record) (uint64, error)) *Store_Write_Call {
 	_c.Call.Return(run)
 	return _c
 }

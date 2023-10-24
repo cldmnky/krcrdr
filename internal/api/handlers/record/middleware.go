@@ -3,16 +3,18 @@ package record
 import (
 	"fmt"
 
-	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/gin-gonic/gin"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/mitchellh/mapstructure"
 	middleware "github.com/oapi-codegen/gin-middleware"
+
+	"github.com/cldmnky/krcrdr/internal/api/auth"
+	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 )
 
-func CreateApiMiddleware(v JWSValidator) ([]gin.HandlerFunc, error) {
+func CreateApiMiddleware(v auth.JWSValidator) ([]gin.HandlerFunc, error) {
 	spec, err := api.GetSwagger()
 	if err != nil {
 		return nil, err
@@ -26,7 +28,7 @@ func CreateApiMiddleware(v JWSValidator) ([]gin.HandlerFunc, error) {
 		},
 		Options: openapi3filter.Options{
 			MultiError:         true,
-			AuthenticationFunc: NewAuthenticator(v),
+			AuthenticationFunc: auth.NewAuthenticator(v),
 		},
 	}
 	return []gin.HandlerFunc{middleware.OapiRequestValidatorWithOptions(spec, &options), TenantMiddleware()}, nil
@@ -44,19 +46,19 @@ func TenantMiddleware() gin.HandlerFunc {
 	}
 }
 
-func getTenantClaimsFromContext(c *gin.Context) (*Tenant, error) {
-	ck, ok := c.Get(JWTClaimsContextKey)
+func getTenantClaimsFromContext(c *gin.Context) (*auth.Tenant, error) {
+	ck, ok := c.Get(auth.JWTClaimsContextKey)
 	if !ok {
-		return nil, ErrClaimsInvalid
+		return nil, auth.ErrClaimsInvalid
 	}
 	// Get privateClaims from ck
 	pc := ck.(jwt.Token).PrivateClaims()
 	// Get the tenant claim from the private claims
-	t, ok := pc[TenantClaim]
+	t, ok := pc[auth.TenantClaim]
 	if !ok {
 		return nil, fmt.Errorf("tenant claim not found")
 	}
-	var tenant Tenant
+	var tenant auth.Tenant
 	cfg := &mapstructure.DecoderConfig{
 		Metadata: nil,
 		Result:   &tenant,

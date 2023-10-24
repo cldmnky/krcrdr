@@ -7,14 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
-	"github.com/cldmnky/krcrdr/internal/api/store/providers/nats"
 	"github.com/nats-io/nats-server/v2/server"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"go.opentelemetry.io/otel/trace"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
+	"github.com/cldmnky/krcrdr/internal/api/store/providers/frostdb"
+	"github.com/cldmnky/krcrdr/internal/api/store/providers/nats"
+	"github.com/cldmnky/krcrdr/internal/tracer"
 )
 
 func TestStore(t *testing.T) {
@@ -25,13 +28,16 @@ func TestStore(t *testing.T) {
 }
 
 var (
-	opts *server.Options
-	ns   *server.Server
-	//err  error
+	opts          *server.Options
+	ns            *server.Server
+	traceProvider trace.TracerProvider
 )
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	traceExporter, err := tracer.NewExporter("noop", "127.0.0.1:4317", GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+	traceProvider, err = tracer.NewProvider(context.Background(), "version", traceExporter)
 	// create a temporary directory for the store
 	dir, err := os.MkdirTemp("", "store")
 	Expect(err).NotTo(HaveOccurred())
@@ -55,11 +61,13 @@ var _ = AfterSuite(func() {
 var _ = Describe("Tenants", func() {
 	var s Store
 	BeforeEach(func() {
-		stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
+		stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port), traceProvider.Tracer("stream"))
 		Expect(err).NotTo(HaveOccurred())
-		kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
+		kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port), traceProvider.Tracer("kv"))
 		Expect(err).NotTo(HaveOccurred())
-		s = NewStore(stream, kv)
+		index, err := frostdb.NewIndex(kv, traceProvider.Tracer("index"))
+		Expect(err).NotTo(HaveOccurred())
+		s = NewStore(stream, kv, index)
 	})
 	It("should create tenants", func() {
 		tenant := NewTenant("foo")
@@ -106,14 +114,16 @@ var _ = Describe("Tenants", func() {
 
 	var _ = Describe("Streams", func() {
 		It("should write streams when tenant exists", func() {
-			stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
+			stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port), traceProvider.Tracer("sream"))
 			Expect(err).NotTo(HaveOccurred())
-			kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
+			kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port), traceProvider.Tracer("kv"))
 			Expect(err).NotTo(HaveOccurred())
-			s := NewStore(stream, kv)
+			index, err := frostdb.NewIndex(kv, traceProvider.Tracer("index"))
+			Expect(err).NotTo(HaveOccurred())
+			s := NewStore(stream, kv, index)
 			tenants, err := s.ListTenants(context.Background())
 			Expect(err).NotTo(HaveOccurred())
-			err = s.WriteStream(context.Background(), tenants[0], &api.Record{
+			seq, err := s.Write(context.Background(), tenants[0], &api.Record{
 				Name:      "foo",
 				Namespace: "bar",
 				Cluster:   "baz",
@@ -128,15 +138,18 @@ var _ = Describe("Tenants", func() {
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
+			Expect(seq).To(Equal(uint64(1)))
 
 		})
 		It("should not write streams when tenant does not exist", func() {
-			stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
+			stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port), traceProvider.Tracer("stream"))
 			Expect(err).NotTo(HaveOccurred())
-			kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port))
+			kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port), traceProvider.Tracer("kv"))
 			Expect(err).NotTo(HaveOccurred())
-			s := NewStore(stream, kv)
-			err = s.WriteStream(context.Background(), "doesnotexist", &api.Record{
+			index, err := frostdb.NewIndex(kv, traceProvider.Tracer("index"))
+			Expect(err).NotTo(HaveOccurred())
+			s := NewStore(stream, kv, index)
+			seq, err := s.Write(context.Background(), "doesnotexist", &api.Record{
 				Name:      "foo",
 				Namespace: "bar",
 				Cluster:   "baz",
@@ -151,6 +164,7 @@ var _ = Describe("Tenants", func() {
 				},
 			})
 			Expect(err).To(HaveOccurred())
+			Expect(seq).To(Equal(uint64(0)))
 		})
 	})
 })

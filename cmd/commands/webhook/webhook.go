@@ -1,7 +1,6 @@
 package webhook
 
 import (
-	"flag"
 	"os"
 
 	recorderv1beta1 "github.com/cldmnky/krcrdr/api/v1beta1"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/cldmnky/krcrdr/cmd/options"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	"github.com/madflojo/testcerts"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,7 +17,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	k8swebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 	ctrladmission "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -40,13 +37,6 @@ func init() {
 // It also sets up health and readiness checks.
 // Returns an error if there was a problem starting the server.
 func Complete(cmd *cobra.Command, args []string, ro *options.RootOptions, o *options.WebhookOptions) error {
-	zapOpts := zap.Options{
-		Development: o.Debug,
-	}
-	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	zapOpts.BindFlags(flag.CommandLine)
-	flag.Parse()
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&zapOpts)))
 	// Generate certs if requested
 	if o.GenerateCerts {
 		webhookLog.Info("Generating certs to: " + o.CertDir)

@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"net/http/httptrace"
 
-	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 	"github.com/deepmap/oapi-codegen/pkg/securityprovider"
 	"github.com/hashicorp/go-retryablehttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 )
 
 var logger = logf.Log.WithName("retryableClient")

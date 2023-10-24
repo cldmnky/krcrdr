@@ -24,17 +24,27 @@ func (_m *StreamService) EXPECT() *StreamService_Expecter {
 }
 
 // Write provides a mock function with given fields: ctx, tenant, record
-func (_m *StreamService) Write(ctx context.Context, tenant string, record *api.Record) error {
+func (_m *StreamService) Write(ctx context.Context, tenant string, record *api.Record) (uint64, error) {
 	ret := _m.Called(ctx, tenant, record)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *api.Record) error); ok {
+	var r0 uint64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *api.Record) (uint64, error)); ok {
+		return rf(ctx, tenant, record)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *api.Record) uint64); ok {
 		r0 = rf(ctx, tenant, record)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(uint64)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, string, *api.Record) error); ok {
+		r1 = rf(ctx, tenant, record)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // StreamService_Write_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Write'
@@ -57,12 +67,12 @@ func (_c *StreamService_Write_Call) Run(run func(ctx context.Context, tenant str
 	return _c
 }
 
-func (_c *StreamService_Write_Call) Return(_a0 error) *StreamService_Write_Call {
-	_c.Call.Return(_a0)
+func (_c *StreamService_Write_Call) Return(_a0 uint64, _a1 error) *StreamService_Write_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *StreamService_Write_Call) RunAndReturn(run func(context.Context, string, *api.Record) error) *StreamService_Write_Call {
+func (_c *StreamService_Write_Call) RunAndReturn(run func(context.Context, string, *api.Record) (uint64, error)) *StreamService_Write_Call {
 	_c.Call.Return(run)
 	return _c
 }

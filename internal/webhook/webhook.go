@@ -17,6 +17,7 @@ var webhooklog = logf.Log.WithName("webhook")
 
 // +kubebuilder:webhook:path=/recorder,mutating=false,failurePolicy=ignore,groups="*",resources="*",verbs=create;update;delete,versions="*",name=recorder.blahonga.me,sideEffects=None,admissionReviewVersions=v1
 
+// RecorderWebhook implements admission.Handler.
 type RecorderWebhook struct {
 	Client   client.Client
 	Decoder  *admission.Decoder
@@ -29,8 +30,11 @@ type RecorderWebhook struct {
 // records the request using the Recorder, and returns an admission response
 // indicating that the request was allowed and recorded.
 func (v *RecorderWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
+	ctx, span := v.Tracer.Start(ctx, "Handle")
+	defer span.End()
 	// Skip dry-run requests
 	if req.DryRun != nil && *req.DryRun {
+		span.AddEvent("dry-run")
 		return admission.Allowed("dry-run")
 	}
 	target := &unstructured.Unstructured{}
@@ -38,9 +42,7 @@ func (v *RecorderWebhook) Handle(ctx context.Context, req admission.Request) adm
 
 	_ = v.Decoder.DecodeRaw(req.OldObject, target)
 	_ = v.Decoder.DecodeRaw(req.Object, object)
-	ctx, span := v.Tracer.Start(ctx, "record")
-	defer span.End()
-	err := v.Recorder.FromAdmissionRequest(target, object, &req.AdmissionRequest)
+	err := v.Recorder.FromAdmissionRequest(ctx, target, object, &req.AdmissionRequest)
 	if err != nil {
 		webhooklog.Error(err, "failed to record request")
 		span.RecordError(err)

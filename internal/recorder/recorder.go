@@ -5,23 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/ghodss/yaml"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"go.opentelemetry.io/otel/trace"
 	jsonpatch6902 "gomodules.xyz/jsonpatch/v2"
-
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 )
 
 //go:generate mockery --name RecorderMock
 type Recorder interface {
-	FromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) error
+	FromAdmissionRequest(ctx context.Context, oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) error
 	SendToApiServer(ctx context.Context) error
 }
 
@@ -38,10 +38,10 @@ func NewRecorder(client api.ClientInterface, tracer trace.Tracer) Recorder {
 	}
 }
 
-func (r *recorder) FromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) error {
-	_, span := r.tracer.Start(context.Background(), "record")
+func (r *recorder) FromAdmissionRequest(ctx context.Context, oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) error {
+	ctx, span := r.tracer.Start(ctx, "FromAdmissionRequest")
 	defer span.End()
-	record, err := fromAdmissionRequest(oldObject, newObject, req)
+	record, err := r.fromAdmissionRequest(ctx, oldObject, newObject, req)
 	if err != nil {
 		span.RecordError(err)
 		return err
@@ -52,7 +52,7 @@ func (r *recorder) FromAdmissionRequest(oldObject, newObject *unstructured.Unstr
 
 // SendToApiServer sends the record to the API server
 func (r *recorder) SendToApiServer(ctx context.Context) error {
-	ctx, span := r.tracer.Start(ctx, "send")
+	ctx, span := r.tracer.Start(ctx, "SendToApiServer")
 	defer span.End()
 	if r.record == nil {
 		span.RecordError(fmt.Errorf("no record to send"))
@@ -83,7 +83,9 @@ func (r *recorder) ToYaml() (string, error) {
 	return string(y), nil
 }
 
-func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) (*api.Record, error) {
+func (r *recorder) fromAdmissionRequest(ctx context.Context, oldObject, newObject *unstructured.Unstructured, req *admissionv1.AdmissionRequest) (*api.Record, error) {
+	_, span := r.tracer.Start(ctx, "FromAdmissionRequest")
+	defer span.End()
 	var (
 		patch      []byte
 		err        error
@@ -96,14 +98,15 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 
 	switch req.Operation {
 	case admissionv1.Create:
-		// new object
+		span.AddEvent("create")
 	case admissionv1.Update:
-		// update
+		span.AddEvent("update")
 	case admissionv1.Delete:
-		// old object
+		span.AddEvent("delete")
 	case admissionv1.Connect:
-		//pass
+		span.AddEvent("connect")
 	default:
+		span.RecordError(fmt.Errorf("unknown operation type: %s", req.Operation))
 		return nil, fmt.Errorf("unknown operation type: %s", req.Operation)
 	}
 
@@ -133,6 +136,7 @@ func fromAdmissionRequest(oldObject, newObject *unstructured.Unstructured, req *
 	}
 	p, err := jsonpatch6902.CreatePatch(old, new)
 	if err != nil {
+		span.RecordError(err)
 		p = nil
 	}
 	jp6902str := ""

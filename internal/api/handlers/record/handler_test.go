@@ -9,14 +9,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cldmnky/krcrdr/internal/api/store"
-	"github.com/cldmnky/krcrdr/internal/tracer"
-	storeMocks "github.com/cldmnky/krcrdr/test/mocks/internal_/api/store"
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
+
+	"github.com/cldmnky/krcrdr/internal/api/auth"
+	"github.com/cldmnky/krcrdr/internal/api/store"
+	"github.com/cldmnky/krcrdr/internal/tracer"
+	storeMocks "github.com/cldmnky/krcrdr/test/mocks/internal_/api/store"
 )
 
 var (
@@ -39,7 +40,7 @@ func TestApi(t *testing.T) {
 	}
 
 	// setup the validator
-	fa, err := NewFakeAuthenticator()
+	fa, err := auth.NewFakeAuthenticator()
 	require.NoError(t, err)
 
 	// mock store
@@ -51,7 +52,7 @@ func TestApi(t *testing.T) {
 	}
 
 	// Create a JWT token with the fake authenticator that has the write and read premissions
-	tenant := Tenant{
+	tenant := auth.Tenant{
 		ID:   "test",
 		Role: "admin",
 	}
@@ -84,16 +85,18 @@ func TestRecordImpl_AddRecord(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	// Set the tenant in the context
-	c.Set("tenant", &Tenant{ID: "test"})
+	c.Set("tenant", &auth.Tenant{ID: "test"})
 	recordApi := RecordImpl{
 		store:  storeMock,
 		tracer: trace.NewNoopTracerProvider().Tracer("test"),
 	}
-	storeMock.Mock.On("GetTenant", c, "test").Times(1).Return(&store.Tenant{
+	ctx, span := recordApi.tracer.Start(context.Background(), "AddRecord")
+	defer span.End()
+	storeMock.Mock.On("GetTenant", ctx, "test").Times(1).Return(&store.Tenant{
 		Id:   "test",
 		Name: "test",
 	}, nil)
-	storeMock.Mock.On("WriteStream", c, "test", mock.AnythingOfType("*api.Record")).Times(1).Return(nil)
+	storeMock.Mock.On("Write", ctx, "test", mock.AnythingOfType("*api.Record")).Times(1).Return(uint64(1), nil)
 
 	// add json to the request body
 	c.Request, _ = http.NewRequest("POST", "/record", bytes.NewBuffer([]byte(`
@@ -153,7 +156,7 @@ func TestRecordImpl_ListRecords(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	// Set the tenant in the context
-	c.Set("tenant", &Tenant{ID: "test"})
+	c.Set("tenant", &auth.Tenant{ID: "test"})
 
 	recordApi := RecordImpl{}
 

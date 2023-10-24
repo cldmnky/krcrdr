@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-
 	"errors"
 
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
@@ -23,16 +22,18 @@ type (
 		CreateTenant(ctx context.Context, tenant *Tenant) (*Tenant, error)
 		GetTenant(ctx context.Context, tenantId string) (*Tenant, error)
 		ListTenants(ctx context.Context) ([]string, error)
-		WriteStream(ctx context.Context, tenantId string, record *api.Record) error
+		Write(ctx context.Context, tenantId string, record *api.Record) (uint64, error)
+		StartIndexer(ctx context.Context) error
 	}
 
 	store struct {
 		stream StreamService
 		kv     KVService
+		index  IndexService
 	}
 
 	StreamService interface {
-		Write(ctx context.Context, tenant string, record *api.Record) error
+		Write(ctx context.Context, tenant string, record *api.Record) (uint64, error)
 	}
 
 	KVService interface {
@@ -40,13 +41,23 @@ type (
 		GetTenant(ctx context.Context, tenantId string) ([]byte, error)
 		ListTenants(ctx context.Context) ([]string, error)
 	}
+
+	IndexService interface {
+		Write(ctx context.Context, seq uint64, record *api.Record) error
+		Start(ctx context.Context) error
+	}
 )
 
-func NewStore(streamService StreamService, kvService KVService) Store {
+func NewStore(streamService StreamService, kvService KVService, indexService IndexService) Store {
 	return &store{
 		stream: streamService,
 		kv:     kvService,
+		index:  indexService,
 	}
+}
+
+func (s *store) StartIndexer(ctx context.Context) error {
+	return s.index.Start(ctx)
 }
 
 func (s *store) CreateTenant(ctx context.Context, tenant *Tenant) (*Tenant, error) {
@@ -84,7 +95,7 @@ func (s *store) ListTenants(ctx context.Context) ([]string, error) {
 	return s.kv.ListTenants(ctx)
 }
 
-// WriteStream writes a record to the stream.
-func (s *store) WriteStream(ctx context.Context, tenant string, record *api.Record) error {
+// Write writes a record to the stream.
+func (s *store) Write(ctx context.Context, tenant string, record *api.Record) (uint64, error) {
 	return s.stream.Write(ctx, tenant, record)
 }
