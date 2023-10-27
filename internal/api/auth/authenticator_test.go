@@ -1,5 +1,5 @@
 // BEGIN: 4c5d6f7g8h9j
-package record
+package auth
 
 import (
 	"context"

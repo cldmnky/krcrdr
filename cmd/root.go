@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cldmnky/krcrdr/cmd/options"
-	"github.com/cldmnky/krcrdr/internal/tracer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/cldmnky/krcrdr/cmd/options"
+	"github.com/cldmnky/krcrdr/internal/tracer"
 )
 
 var (
@@ -37,7 +37,7 @@ func New() *cobra.Command {
 				err = tracer.StartTracer(cmd.Context(), traceExporter)
 				cobra.CheckErr(err)
 			}()
-			return bindViper(cmd, args, "KRCRDR")
+			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			// print help

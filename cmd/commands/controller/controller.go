@@ -3,13 +3,8 @@ package controller
 import (
 	"flag"
 
-	recorderv1beta1 "github.com/cldmnky/krcrdr/api/v1beta1"
-	"github.com/cldmnky/krcrdr/cmd/options"
-	"github.com/cldmnky/krcrdr/internal/controller"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -18,6 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	recorderv1beta1 "github.com/cldmnky/krcrdr/api/v1beta1"
+	"github.com/cldmnky/krcrdr/cmd/options"
+	"github.com/cldmnky/krcrdr/internal/controller"
 )
 
 var (

@@ -1,6 +1,8 @@
 package recorder
 
 import (
+	"context"
+	"os"
 	"testing"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -10,6 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/cldmnky/krcrdr/internal/tracer"
 )
 
 func TestFromAdmissionRequest(t *testing.T) {
@@ -72,8 +76,20 @@ func TestFromAdmissionRequest(t *testing.T) {
 			},
 		},
 	}
+	traceExporter, err := tracer.NewExporter("console", "127.0.0.1:4317", os.Stdout)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	traceProvider, err := tracer.NewProvider(context.Background(), "version", traceExporter)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
 
-	record, err := fromAdmissionRequest(oldObject, newObject, req)
+	recorder := &recorder{
+		tracer: traceProvider.Tracer("recorder"),
+	}
+
+	record, err := recorder.fromAdmissionRequest(context.Background(), oldObject, newObject, req)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

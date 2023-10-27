@@ -8,20 +8,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cldmnky/krcrdr/cmd/options"
-	"github.com/cldmnky/krcrdr/internal/api"
-	"github.com/cldmnky/krcrdr/internal/api/handlers/record"
-	"github.com/cldmnky/krcrdr/internal/api/store"
-	"github.com/cldmnky/krcrdr/internal/api/store/providers/nats"
 	"github.com/madflojo/testcerts"
 	"github.com/nats-io/nats-server/v2/server"
+	natsgo "github.com/nats-io/nats.go"
 	"github.com/spf13/cobra"
-
 	ctrl "sigs.k8s.io/controller-runtime"
-
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	natsgo "github.com/nats-io/nats.go"
+	"github.com/cldmnky/krcrdr/cmd/options"
+	"github.com/cldmnky/krcrdr/internal/api"
+	"github.com/cldmnky/krcrdr/internal/api/auth"
+	"github.com/cldmnky/krcrdr/internal/api/store"
+	"github.com/cldmnky/krcrdr/internal/api/store/providers/frostdb"
+	"github.com/cldmnky/krcrdr/internal/api/store/providers/nats"
 )
 
 var apiLog = ctrl.Log.WithName("api")
@@ -70,6 +69,7 @@ func Complete(cmd *cobra.Command, args []string, ro *options.RootOptions, o *opt
 	// Setup the store
 	stream, err := nats.NewStream(
 		defaultNats,
+		ro.Tracer,
 		natsOpts..., // append nats options
 	)
 	if err != nil {
@@ -78,12 +78,22 @@ func Complete(cmd *cobra.Command, args []string, ro *options.RootOptions, o *opt
 
 	kv, err := nats.NewKV(
 		defaultNats,
+		ro.Tracer,
 		natsOpts..., // append nats options
 	)
 	if err != nil {
 		return err
 	}
-	s := store.NewStore(stream, kv)
+
+	index, err := frostdb.NewIndex(kv, ro.Tracer)
+	if err != nil {
+		return err
+	}
+	s := store.NewStore(stream, kv, index)
+	// Start the indexer
+	if err := s.StartIndexer(ctrl.SetupSignalHandler()); err != nil {
+		return err
+	}
 
 	if o.GenerateSelfSignedCert {
 		// Generate a self-signed cert
@@ -105,7 +115,7 @@ func Complete(cmd *cobra.Command, args []string, ro *options.RootOptions, o *opt
 	}
 
 	// Start the API server
-	fa, err := record.NewFakeAuthenticator()
+	fa, err := auth.NewFakeAuthenticator()
 	if err != nil {
 		return err
 	}

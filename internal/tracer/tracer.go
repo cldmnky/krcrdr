@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -32,7 +31,7 @@ type (
 )
 
 const (
-	ExporterTypeOTLP    ExporterType = "otlp"
+	ExporterTypeGRPC    ExporterType = "grpc"
 	ExporterTypeHTTP    ExporterType = "http"
 	ExporterTypeConsole ExporterType = "console"
 	ExporterTypeNoop    ExporterType = "noop"
@@ -54,9 +53,9 @@ type Exporter interface {
 // If the exporter type is unknown, a new NoopExporter is created and an error is returned.
 func NewExporter(exType, otlpAddress string, writer io.Writer) (Exporter, error) {
 	switch strings.ToLower(exType) {
-	case string(ExporterTypeOTLP):
-		tracerlog.Info("creating otlp exporter", "address", otlpAddress)
-		return NewOTELExporter(otlpAddress)
+	case string(ExporterTypeGRPC):
+		tracerlog.Info("creating grpc exporter", "address", otlpAddress)
+		return NewGRPCExporter(otlpAddress)
 	case string(ExporterTypeConsole):
 		tracerlog.Info("creating console exporter")
 		return NewConsoleExporter(writer)
@@ -100,7 +99,7 @@ func (c *consoleExporter) Start(_ context.Context) error {
 	return nil
 }
 
-func NewOTELExporter(otlpAddress string) (Exporter, error) {
+func NewGRPCExporter(otlpAddress string) (Exporter, error) {
 	return otlptracegrpc.NewUnstarted(
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(otlpAddress),

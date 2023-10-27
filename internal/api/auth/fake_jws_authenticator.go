@@ -1,4 +1,4 @@
-package record
+package auth
 
 import (
 	"crypto/ecdsa"
@@ -32,6 +32,7 @@ func (f *FakeAuthenticator) ValidateJWS(jwsString string) (jwt.Token, error) {
 	return jwt.Parse([]byte(jwsString), jwt.WithKeySet(f.KeySet), jwt.WithAudience(FakeAudience), jwt.WithIssuer(FakeIssuer))
 }
 
+// NewFakeAuthenticator creates a new authenticator with a fake private key
 func NewFakeAuthenticator() (*FakeAuthenticator, error) {
 	privKey, err := ecdsafile.LoadEcdsaPrivateKey([]byte(PrivateKey))
 	if err != nil {

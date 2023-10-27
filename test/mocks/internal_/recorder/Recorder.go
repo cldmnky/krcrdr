@@ -25,13 +25,13 @@ func (_m *Recorder) EXPECT() *Recorder_Expecter {
 	return &Recorder_Expecter{mock: &_m.Mock}
 }
 
-// FromAdmissionRequest provides a mock function with given fields: oldObject, newObject, req
-func (_m *Recorder) FromAdmissionRequest(oldObject *unstructured.Unstructured, newObject *unstructured.Unstructured, req *v1.AdmissionRequest) error {
-	ret := _m.Called(oldObject, newObject, req)
+// FromAdmissionRequest provides a mock function with given fields: ctx, oldObject, newObject, req
+func (_m *Recorder) FromAdmissionRequest(ctx context.Context, oldObject *unstructured.Unstructured, newObject *unstructured.Unstructured, req *v1.AdmissionRequest) error {
+	ret := _m.Called(ctx, oldObject, newObject, req)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*unstructured.Unstructured, *unstructured.Unstructured, *v1.AdmissionRequest) error); ok {
-		r0 = rf(oldObject, newObject, req)
+	if rf, ok := ret.Get(0).(func(context.Context, *unstructured.Unstructured, *unstructured.Unstructured, *v1.AdmissionRequest) error); ok {
+		r0 = rf(ctx, oldObject, newObject, req)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -45,16 +45,17 @@ type Recorder_FromAdmissionRequest_Call struct {
 }
 
 // FromAdmissionRequest is a helper method to define mock.On call
+//   - ctx context.Context
 //   - oldObject *unstructured.Unstructured
 //   - newObject *unstructured.Unstructured
 //   - req *v1.AdmissionRequest
-func (_e *Recorder_Expecter) FromAdmissionRequest(oldObject interface{}, newObject interface{}, req interface{}) *Recorder_FromAdmissionRequest_Call {
-	return &Recorder_FromAdmissionRequest_Call{Call: _e.mock.On("FromAdmissionRequest", oldObject, newObject, req)}
+func (_e *Recorder_Expecter) FromAdmissionRequest(ctx interface{}, oldObject interface{}, newObject interface{}, req interface{}) *Recorder_FromAdmissionRequest_Call {
+	return &Recorder_FromAdmissionRequest_Call{Call: _e.mock.On("FromAdmissionRequest", ctx, oldObject, newObject, req)}
 }
 
-func (_c *Recorder_FromAdmissionRequest_Call) Run(run func(oldObject *unstructured.Unstructured, newObject *unstructured.Unstructured, req *v1.AdmissionRequest)) *Recorder_FromAdmissionRequest_Call {
+func (_c *Recorder_FromAdmissionRequest_Call) Run(run func(ctx context.Context, oldObject *unstructured.Unstructured, newObject *unstructured.Unstructured, req *v1.AdmissionRequest)) *Recorder_FromAdmissionRequest_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*unstructured.Unstructured), args[1].(*unstructured.Unstructured), args[2].(*v1.AdmissionRequest))
+		run(args[0].(context.Context), args[1].(*unstructured.Unstructured), args[2].(*unstructured.Unstructured), args[3].(*v1.AdmissionRequest))
 	})
 	return _c
 }
@@ -64,7 +65,7 @@ func (_c *Recorder_FromAdmissionRequest_Call) Return(_a0 error) *Recorder_FromAd
 	return _c
 }
 
-func (_c *Recorder_FromAdmissionRequest_Call) RunAndReturn(run func(*unstructured.Unstructured, *unstructured.Unstructured, *v1.AdmissionRequest) error) *Recorder_FromAdmissionRequest_Call {
+func (_c *Recorder_FromAdmissionRequest_Call) RunAndReturn(run func(context.Context, *unstructured.Unstructured, *unstructured.Unstructured, *v1.AdmissionRequest) error) *Recorder_FromAdmissionRequest_Call {
 	_c.Call.Return(run)
 	return _c
 }

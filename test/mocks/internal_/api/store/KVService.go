@@ -5,6 +5,8 @@ package store
 import (
 	context "context"
 
+	apistore "github.com/cldmnky/krcrdr/internal/api/store"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -182,6 +184,62 @@ func (_c *KVService_ListTenants_Call) Return(_a0 []string, _a1 error) *KVService
 }
 
 func (_c *KVService_ListTenants_Call) RunAndReturn(run func(context.Context) ([]string, error)) *KVService_ListTenants_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Watch provides a mock function with given fields: ctx
+func (_m *KVService) Watch(ctx context.Context) (<-chan apistore.KVEntry, <-chan struct{}) {
+	ret := _m.Called(ctx)
+
+	var r0 <-chan apistore.KVEntry
+	var r1 <-chan struct{}
+	if rf, ok := ret.Get(0).(func(context.Context) (<-chan apistore.KVEntry, <-chan struct{})); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) <-chan apistore.KVEntry); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan apistore.KVEntry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) <-chan struct{}); ok {
+		r1 = rf(ctx)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(<-chan struct{})
+		}
+	}
+
+	return r0, r1
+}
+
+// KVService_Watch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Watch'
+type KVService_Watch_Call struct {
+	*mock.Call
+}
+
+// Watch is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *KVService_Expecter) Watch(ctx interface{}) *KVService_Watch_Call {
+	return &KVService_Watch_Call{Call: _e.mock.On("Watch", ctx)}
+}
+
+func (_c *KVService_Watch_Call) Run(run func(ctx context.Context)) *KVService_Watch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *KVService_Watch_Call) Return(_a0 <-chan apistore.KVEntry, _a1 <-chan struct{}) *KVService_Watch_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *KVService_Watch_Call) RunAndReturn(run func(context.Context) (<-chan apistore.KVEntry, <-chan struct{})) *KVService_Watch_Call {
 	_c.Call.Return(run)
 	return _c
 }

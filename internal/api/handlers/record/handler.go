@@ -2,17 +2,18 @@ package record
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel/trace"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/cldmnky/krcrdr/internal/api/auth"
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record/api"
 	"github.com/cldmnky/krcrdr/internal/api/store"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var logger = logf.Log.WithName("apiHandler")
 
-func Mount(r *gin.Engine, v JWSValidator, store store.Store, tracer trace.Tracer) error {
+func Mount(r *gin.Engine, v auth.JWSValidator, store store.Store, tracer trace.Tracer) error {
 	r.Use(otelgin.Middleware("api"))
 	recordApi := NewRecordHandler(store, tracer)
 	apiMw, err := CreateApiMiddleware(v)
@@ -37,7 +38,7 @@ type RecordImpl struct {
 }
 
 func (r RecordImpl) AddRecord(c *gin.Context) {
-	_, span := r.tracer.Start(c, "AddRecord")
+	ctx, span := r.tracer.Start(c.Request.Context(), "AddRecord")
 	defer span.End()
 	// get the post body
 	var record api.Record
@@ -53,12 +54,12 @@ func (r RecordImpl) AddRecord(c *gin.Context) {
 		c.IndentedJSON(400, gin.H{"error": "no tenant in context"})
 		return
 	}
-	storeTennant, err := r.store.GetTenant(c, tenant.ID)
+	storeTennant, err := r.store.GetTenant(ctx, tenant.ID)
 	if err != nil {
 		c.IndentedJSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	if err := r.store.WriteStream(c, storeTennant.Id, &record); err != nil {
+	if _, err := r.store.Write(ctx, storeTennant.Id, &record); err != nil {
 		c.IndentedJSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -70,10 +71,10 @@ func (r RecordImpl) ListRecords(c *gin.Context) {
 	c.IndentedJSON(200, "ListRecords")
 }
 
-func getTenant(c *gin.Context) *Tenant {
+func getTenant(c *gin.Context) *auth.Tenant {
 	t, ok := c.Get("tenant")
 	if !ok {
 		return nil
 	}
-	return t.(*Tenant)
+	return t.(*auth.Tenant)
 }

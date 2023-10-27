@@ -1,9 +1,10 @@
 package api
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/cldmnky/krcrdr/internal/api/handlers/base"
 	"github.com/cldmnky/krcrdr/internal/api/handlers/record"
-	"github.com/gin-gonic/gin"
 )
 
 // RegisterRoutes register the routes for the server
