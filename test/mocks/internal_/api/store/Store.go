@@ -230,6 +230,62 @@ func (_c *Store_StartIndexer_Call) RunAndReturn(run func(context.Context) error)
 	return _c
 }
 
+// WatchTenants provides a mock function with given fields: ctx
+func (_m *Store) WatchTenants(ctx context.Context) (<-chan apistore.KVEntry, <-chan struct{}) {
+	ret := _m.Called(ctx)
+
+	var r0 <-chan apistore.KVEntry
+	var r1 <-chan struct{}
+	if rf, ok := ret.Get(0).(func(context.Context) (<-chan apistore.KVEntry, <-chan struct{})); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) <-chan apistore.KVEntry); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan apistore.KVEntry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) <-chan struct{}); ok {
+		r1 = rf(ctx)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(<-chan struct{})
+		}
+	}
+
+	return r0, r1
+}
+
+// Store_WatchTenants_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WatchTenants'
+type Store_WatchTenants_Call struct {
+	*mock.Call
+}
+
+// WatchTenants is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Store_Expecter) WatchTenants(ctx interface{}) *Store_WatchTenants_Call {
+	return &Store_WatchTenants_Call{Call: _e.mock.On("WatchTenants", ctx)}
+}
+
+func (_c *Store_WatchTenants_Call) Run(run func(ctx context.Context)) *Store_WatchTenants_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Store_WatchTenants_Call) Return(_a0 <-chan apistore.KVEntry, _a1 <-chan struct{}) *Store_WatchTenants_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Store_WatchTenants_Call) RunAndReturn(run func(context.Context) (<-chan apistore.KVEntry, <-chan struct{})) *Store_WatchTenants_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Write provides a mock function with given fields: ctx, tenantId, record
 func (_m *Store) Write(ctx context.Context, tenantId string, record *api.Record) (uint64, error) {
 	ret := _m.Called(ctx, tenantId, record)

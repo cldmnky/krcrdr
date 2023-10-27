@@ -3,12 +3,15 @@ package nats
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/cldmnky/krcrdr/internal/api/store"
 )
 
 var (
@@ -103,18 +106,73 @@ func (s *NatsStore) ListTenants(ctx context.Context) ([]string, error) {
 	return tenants, nil
 }
 
-// WatchTenants will watch for changes to the tenants kv
-func (s *NatsStore) WatchTenants(ctx context.Context) error {
-	w, err := s.kv.WatchAll(ctx)
+// Watch returns a channel of KVEntry and a done channel.
+func (s *NatsStore) Watch(ctx context.Context) (<-chan store.KVEntry, <-chan struct{}) {
+	var (
+		err     error
+		updates = make(chan store.KVEntry)
+		done    = make(chan struct{})
+	)
+	w, err := s.newWatcher(ctx)
 	if err != nil {
-		return err
+		logger.Error(err, "Error setting up watcher")
+		close(updates)
+		close(done)
+		return nil, nil
 	}
-	for {
+	// Run the watcher in a goroutine.
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				logger.Info("Context done, closing watcher")
+				w.Stop()
+				close(updates)
+				close(done)
+				return
+			case <-done:
+				logger.Info("Done channel closed, closing watcher")
+				w.Stop()
+				close(updates)
+				return
+			case entry, ok := <-w.Updates():
+				if !ok {
+					logger.Info("Updates channel closed, closing watcher")
+					return
+				}
+				if entry == nil {
+					logger.Info("Loaded initial state")
+					continue
+				}
+				updates <- kvEntry{
+					bucket:    entry.Bucket(),
+					key:       entry.Key(),
+					value:     entry.Value(),
+					revision:  entry.Revision(),
+					created:   entry.Created(),
+					operation: store.KVWatchOp(entry.Operation()),
+				}
+
+			}
+		}
+	}()
+
+	return updates, done
+}
+
+// newWatcher sets up a nats kv WatchAll and return a KeyWatcher.
+func (s *NatsStore) newWatcher(ctx context.Context) (jetstream.KeyWatcher, error) {
+	watcher, err := s.kv.WatchAll(nats.Context(ctx))
+	for err != nil {
 		select {
-		case kve := <-w.Updates():
-			logger.Info("got update", "key", kve.Key, "value", kve.Value())
 		case <-ctx.Done():
-			return nil
+			return nil, ctx.Err()
+		default:
+			logger.Error(err, "Error setting up watcher, retrying in 100ms")
+			watcher, err = s.kv.WatchAll(nats.Context(ctx))
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
+
+	return watcher, nil
 }
