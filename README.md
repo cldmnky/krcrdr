@@ -1,2 +1,2 @@
 # krcrdr
-Record changes in a lubernetes cluster
+Record changes in a kubernetes cluster
