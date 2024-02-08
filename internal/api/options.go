@@ -5,10 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cldmnky/krcrdr/internal/api/handlers/record"
-	"github.com/cldmnky/krcrdr/internal/api/store"
 	"github.com/go-logr/logr"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/cldmnky/krcrdr/internal/api/auth"
+	"github.com/cldmnky/krcrdr/internal/api/store"
 )
 
 var (
@@ -42,7 +43,7 @@ type Options struct {
 	// ApiLogger is the logger used for the api server
 	ApiLogger logr.Logger
 	// Authenticator is the authenticator used to verify incoming requests
-	Authenticator record.JWSValidator
+	Authenticator auth.JWSValidator
 	// Store is the store used to persist records
 	Store store.Store
 	// Tracer is the tracer used for tracing

@@ -6,11 +6,20 @@ import (
 	"github.com/google/uuid"
 )
 
-type Tenant struct {
-	Id      string   `json:"id"`
-	Name    string   `json:"name"`
-	ApiKeys []string `json:"apiKeys"`
-}
+const (
+	KVPut KVWatchOp = iota
+	KVDelete
+	KVPurge
+)
+
+type (
+	Tenant struct {
+		Id   string `json:"id"`
+		Name string `json:"name"`
+	}
+
+	KVWatchOp int64
+)
 
 func NewTenant(name string) *Tenant {
 	return &Tenant{
@@ -21,4 +30,17 @@ func NewTenant(name string) *Tenant {
 
 func (t *Tenant) ToJSON() ([]byte, error) {
 	return json.Marshal(t)
+}
+
+func (k KVWatchOp) String() string {
+	switch k {
+	case KVPut:
+		return "put"
+	case KVDelete:
+		return "delete"
+	case KVPurge:
+		return "purge"
+	default:
+		return "unknown"
+	}
 }

@@ -16,7 +16,7 @@ func TestNewExporter(t *testing.T) {
 	}{
 		{
 			name:        "OTLP exporter",
-			exType:      ExporterTypeOTLP,
+			exType:      ExporterTypeGRPC,
 			otlpAddress: "localhost:4317",
 			wantErr:     false,
 		},

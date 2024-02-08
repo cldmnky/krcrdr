@@ -12,28 +12,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cldmnky/krcrdr/internal/recorder"
-	"github.com/cldmnky/krcrdr/internal/tracer"
+	//+kubebuilder:scaffold:imports
+
+	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
 	"github.com/madflojo/testcerts"
 	"github.com/nats-io/nats-server/v2/server"
-
-	"github.com/cldmnky/krcrdr/internal/api"
-	"github.com/cldmnky/krcrdr/internal/api/handlers/record"
-	apiclient "github.com/cldmnky/krcrdr/internal/api/handlers/record/client"
-	"github.com/cldmnky/krcrdr/internal/api/store"
-	"github.com/cldmnky/krcrdr/internal/api/store/providers/nats"
-	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	admissionv1 "k8s.io/api/admission/v1"
-	//+kubebuilder:scaffold:imports
 	appsv1 "k8s.io/api/apps/v1"
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-
-	krcrdrwebhook "github.com/cldmnky/krcrdr/internal/webhook"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,6 +33,16 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/cldmnky/krcrdr/internal/api"
+	"github.com/cldmnky/krcrdr/internal/api/auth"
+	apiclient "github.com/cldmnky/krcrdr/internal/api/handlers/record/client"
+	"github.com/cldmnky/krcrdr/internal/api/store"
+	"github.com/cldmnky/krcrdr/internal/api/store/providers/frostdb"
+	"github.com/cldmnky/krcrdr/internal/api/store/providers/nats"
+	"github.com/cldmnky/krcrdr/internal/recorder"
+	"github.com/cldmnky/krcrdr/internal/tracer"
+	krcrdrwebhook "github.com/cldmnky/krcrdr/internal/webhook"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -106,7 +106,7 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient).NotTo(BeNil())
 
 	// setup auth
-	fa, err := record.NewFakeAuthenticator()
+	fa, err := auth.NewFakeAuthenticator()
 	Expect(err).NotTo(HaveOccurred())
 
 	// start webhook server using Manager
@@ -126,7 +126,7 @@ var _ = BeforeSuite(func() {
 	Expect(dec).NotTo(BeNil())
 	wh := mgr.GetWebhookServer()
 	Expect(wh).NotTo(BeNil())
-	tenant := record.Tenant{
+	tenant := auth.Tenant{
 		ID:   uuid.NewString(),
 		Role: "admin",
 	}
@@ -192,11 +192,16 @@ var _ = BeforeSuite(func() {
 	Expect(ns.ReadyForConnections(20 * time.Second)).To(BeTrue())
 
 	// Setup the store
-	stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
+	stream, err := nats.NewStream(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port), traceProvider.Tracer("stream"))
 	Expect(err).NotTo(HaveOccurred())
-	kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port))
+	kv, err := nats.NewKV(fmt.Sprintf("nats://%s:%d", natsOpts.Host, natsOpts.Port), traceProvider.Tracer("kv"))
 	Expect(err).NotTo(HaveOccurred())
-	s = store.NewStore(stream, kv)
+	index, err := frostdb.NewIndex(kv, traceProvider.Tracer("index"))
+	Expect(err).NotTo(HaveOccurred())
+	s = store.NewStore(stream, kv, index)
+	// Start the indexer
+	err = s.StartIndexer(ctx)
+	Expect(err).NotTo(HaveOccurred())
 
 	// Create certs for the api server
 	cert, key, err := testcerts.GenerateCertsToTempFile("/tmp")
